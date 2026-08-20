@@ -1,0 +1,19 @@
+{
+  "name": "perfumeria-arabe",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Catálogo de perfumes con pedidos por WhatsApp + panel de administrador. Backend local (SQLite, sin Docker) + frontend React.",
+  "scripts": {
+    "preinstall": "node scripts/check-node.cjs",
+    "setup": "node scripts/check-node.cjs && npm run install:all",
+    "install:all": "npm install && npm install --prefix \"./server\" && npm install --prefix \"./web\"",
+    "dev": "concurrently -n API,WEB -c blue,magenta \"npm run dev --prefix ./server\" \"npm run dev --prefix ./web\"",
+    "build": "npm run build --prefix \"./server\" && npm run build --prefix \"./web\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "engines": {
+    "node": ">=20.0.0 <21.0.0"
+  }
+}
