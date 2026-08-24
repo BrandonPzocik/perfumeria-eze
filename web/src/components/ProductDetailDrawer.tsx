@@ -7,7 +7,7 @@ import { StockTag, TagBadge } from "./Badges";
 import ScentPyramid from "./ScentPyramid";
 import { usePerfumesStore } from "../hooks/usePerfumesStore";
 import { useSettingsStore } from "../hooks/useSettingsStore";
-import { formatCurrency, buildWhatsAppLink } from "../lib/format";
+import { formatCurrency, buildWhatsAppLink, buildWhatsAppSingleProductMessage } from "../lib/format";
 import { assetUrl } from "../lib/api";
 import { useCartStore } from "../hooks/useCartStore";
 import { useFavoritesStore } from "../hooks/useFavoritesStore";
@@ -65,7 +65,7 @@ export default function ProductDetailDrawer({ product }: { product: Perfume }) {
   const similar = items.filter((p) => p.family === product.family && p.id !== product.id).slice(0, 4);
   const mainImage = assetUrl(product.images?.find((i) => i.isMain)?.url || product.images?.[0]?.url);
 
-  const singleItemMessage = `Hola! Quiero consultar por:\n\n• ${product.name} (${product.type} ${product.size})\n\nMi nombre:\nDirección:\n\nGracias.`;
+  const singleItemMessage = buildWhatsAppSingleProductMessage(product, settings.currency);
 
   return (
     <Drawer
@@ -83,29 +83,29 @@ export default function ProductDetailDrawer({ product }: { product: Perfume }) {
         </button>
       }
       footer={
-        <div className="p-4 sm:p-5 flex flex-col sm:flex-row gap-2.5">
+        <div className="p-3 sm:p-4 flex items-stretch gap-2">
           <button
             onClick={() => toggleFav(product.id)}
-            className="w-full sm:w-12 sm:h-12 h-11 flex-shrink-0 border border-line rounded-lg flex items-center justify-center hover:bg-line-soft transition-colors"
+            className="w-10 h-10 flex-shrink-0 border border-line rounded-lg flex items-center justify-center hover:bg-primary/5 hover:border-primary/30 transition-colors self-center"
             aria-label="Favorito"
           >
-            <Heart size={18} fill={isFav ? "var(--color-primary)" : "none"} color={isFav ? "var(--color-primary)" : "var(--color-ink)"} />
+            <Heart size={17} fill={isFav ? "var(--color-primary)" : "none"} color={isFav ? "var(--color-primary)" : "var(--color-ink)"} />
           </button>
           <button
             disabled={product.stock === 0}
             onClick={handleAdd}
-            className="btn-secondary flex-1 py-3.5 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 inline-flex items-center justify-center border-2 border-primary text-primary rounded-lg text-[11px] sm:text-[12px] uppercase tracking-wide font-bold px-2 py-2.5 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary hover:text-white transition-colors"
           >
-            {product.stock === 0 ? "Sin stock" : "Agregar al carrito"}
+            {product.stock === 0 ? "Sin stock" : "Agregar"}
           </button>
           <a
             href={buildWhatsAppLink(singleItemMessage, settings.whatsappNumber)}
             target="_blank"
             rel="noreferrer"
             onClick={handleBuyNow}
-            className="btn-primary flex-1 py-3.5"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 bg-primary text-white rounded-lg text-[11px] sm:text-[12px] uppercase tracking-wide font-bold px-2 py-2.5 no-underline hover:brightness-110 transition-colors"
           >
-            <MessageCircle size={15} /> Comprar
+            <MessageCircle size={14} /> Comprar
           </a>
         </div>
       }
@@ -151,7 +151,7 @@ export default function ProductDetailDrawer({ product }: { product: Perfume }) {
             <span className="eyebrow opacity-70 block mb-2">Intensidad</span>
             <div className="flex gap-1">
               {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= product.intensidad ? "bg-wine" : "bg-line"}`} />
+                <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= product.intensidad ? "bg-primary" : "bg-line"}`} />
               ))}
             </div>
           </div>
