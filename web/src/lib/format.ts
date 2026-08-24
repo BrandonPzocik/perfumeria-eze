@@ -26,27 +26,27 @@ export function buildWhatsAppOrderMessage(
   const total = items.reduce((sum, { line, product }) => sum + product.price * line.qty, 0);
 
   return [
-    "🛍️ *NUEVO PEDIDO*",
+    "*NUEVO PEDIDO*",
     "━━━━━━━━━━━━━━━━",
     "",
     "Hola! Quiero realizar el siguiente pedido 👇",
     "",
-    "*📦 Productos:*",
+    "* Productos:*",
     body,
     "",
-    `*💰 Total:* ${formatCurrency(total, currency)}`,
+    `*Total:* ${formatCurrency(total, currency)}`,
     "",
-    "*📋 Datos de envío:*",
-    `👤 *Nombre:* ${customerName}`,
-    `📍 *Dirección:* ${customerAddress}`,
+    "* Datos de envío:*",
+    `*Nombre:* ${customerName}`,
+    `*Dirección:* ${customerAddress}`,
     "",
-    "¡Gracias! Quedo atento/a a tu respuesta. 🙌",
+    "¡Gracias! Quedo atento a tu respuesta. ",
   ].join("\n");
 }
 
 export function buildWhatsAppSingleProductMessage(product: Perfume, currency = "ARS"): string {
   return [
-    "🔍 *CONSULTA DE PERFUME*",
+    "*CONSULTA DE PERFUME*",
     "━━━━━━━━━━━━━━━━",
     "",
     "Hola! Quiero consultar por:",
@@ -55,11 +55,11 @@ export function buildWhatsAppSingleProductMessage(product: Perfume, currency = "
     `_${product.brand} · ${product.type} · ${product.size}_`,
     `*Precio:* ${formatCurrency(product.price, currency)}`,
     "",
-    "*📋 Mis datos:*",
-    "👤 *Nombre:*",
-    "📍 *Dirección:*",
+    "*Mis datos:*",
+    "*Nombre:*",
+    "*Dirección:*",
     "",
-    "¡Gracias! 🙌",
+    "¡Gracias!",
   ].join("\n");
 }
 
