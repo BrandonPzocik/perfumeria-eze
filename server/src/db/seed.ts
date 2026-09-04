@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { db } from "../db";
+import { seedDecants } from "./seed-decants";
 import { hashPassword } from "../utils/auth";
 
 const SAMPLE_PERFUMES = [
@@ -32,7 +33,7 @@ export function seed() {
       hashPassword(password),
       "Administrador"
     );
-    console.log(isProd ? `✔ Usuario admin creado -> ${email}` : `✔ Usuario admin creado -> ${email} / ${password}`);
+    console.log(`✔ Usuario admin creado -> ${email}`);
   }
 
   const perfumeCount = (db.prepare(`SELECT COUNT(*) as c FROM perfumes`).get() as any).c;
@@ -53,4 +54,6 @@ export function seed() {
     }
     console.log(`✔ Catálogo de ejemplo cargado (${SAMPLE_PERFUMES.length} perfumes)`);
   }
+
+  seedDecants();
 }

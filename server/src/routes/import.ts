@@ -7,6 +7,7 @@ import { randomUUID } from "crypto";
 import { db } from "../db";
 import { requireAuth } from "../middleware/requireAuth";
 import { UPLOAD_DIR } from "../paths";
+import { listVariants, upsertVariants } from "../db/variants";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
@@ -52,6 +53,24 @@ const HEADER_GUESSES: Record<string, string> = {
   nuevo: "nuevo",
   "más vendido": "masVendido",
   "mas vendido": "masVendido",
+  "2ml": "price2ml",
+  "2 ml": "price2ml",
+  "precio 2ml": "price2ml",
+  "precio 2 ml": "price2ml",
+  "5ml": "price5ml",
+  "5 ml": "price5ml",
+  "precio 5ml": "price5ml",
+  "precio 5 ml": "price5ml",
+  "10ml": "price10ml",
+  "10 ml": "price10ml",
+  "precio 10ml": "price10ml",
+  "precio 10 ml": "price10ml",
+  "stock 2ml": "stock2ml",
+  "stock 2 ml": "stock2ml",
+  "stock 5ml": "stock5ml",
+  "stock 5 ml": "stock5ml",
+  "stock 10ml": "stock10ml",
+  "stock 10 ml": "stock10ml",
 };
 
 function guessMapping(headers: string[]) {
@@ -104,6 +123,35 @@ function splitNotes(value: any): string[] {
     .filter(Boolean);
 }
 
+function parseMoney(value: any): number {
+  if (value == null || value === "") return 0;
+  if (typeof value === "number" && Number.isFinite(value)) return Math.round(value);
+  const raw = String(value).replace(/[$\s]/g, "").trim();
+  if (!raw) return 0;
+  if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(raw)) {
+    return Math.round(Number(raw.replace(/\./g, "").replace(",", ".")));
+  }
+  if (/^\d+,\d+$/.test(raw)) return Math.round(Number(raw.replace(",", ".")));
+  const n = Number(raw.replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(n) ? Math.round(n) : 0;
+}
+
+function collectVariants(mapped: CommitRow) {
+  const sizes = [
+    { key: "price2ml", size: "2ml", stockKey: "stock2ml" },
+    { key: "price5ml", size: "5ml", stockKey: "stock5ml" },
+    { key: "price10ml", size: "10ml", stockKey: "stock10ml" },
+  ];
+  return sizes
+    .filter((s) => mapped[s.key] !== undefined && mapped[s.key] !== "")
+    .map((s) => ({
+      size: s.size,
+      price: parseMoney(mapped[s.key]),
+      stock: mapped[s.stockKey] !== undefined && mapped[s.stockKey] !== "" ? Number(mapped[s.stockKey]) || 0 : 20,
+    }))
+    .filter((v) => v.price > 0);
+}
+
 async function downloadImage(url: string): Promise<string | null> {
   try {
     const resp = await fetch(url);
@@ -138,7 +186,9 @@ router.post("/commit", requireAuth, async (req, res) => {
       if (field) mapped[field] = raw[header];
     });
 
-    const id = String(mapped.id || "").trim();
+    const variants = collectVariants(mapped);
+
+    let id = String(mapped.id || "").trim();
     const name = String(mapped.name || "").trim();
     const brand = String(mapped.brand || "").trim();
 
@@ -163,9 +213,9 @@ router.post("/commit", requireAuth, async (req, res) => {
       type: mapped.type || "EDP",
       size: String(mapped.size || "100ml"),
       description: mapped.description || "",
-      price: Number(mapped.price) || 0,
-      old_price: mapped.oldPrice ? Number(mapped.oldPrice) : null,
-      cost: mapped.cost ? Number(mapped.cost) : null,
+      price: parseMoney(mapped.price),
+      old_price: mapped.oldPrice ? parseMoney(mapped.oldPrice) : null,
+      cost: mapped.cost ? parseMoney(mapped.cost) : null,
       stock: Number(mapped.stock) || 0,
       min_stock: Number(mapped.minStock) || 3,
       notes_salida: JSON.stringify(splitNotes(mapped.notasSalida)),
@@ -178,6 +228,7 @@ router.post("/commit", requireAuth, async (req, res) => {
       oferta: mapped.oferta ? 1 : 0,
       nuevo: mapped.nuevo ? 1 : 0,
       mas_vendido: mapped.masVendido ? 1 : 0,
+      kind: "bottle",
     };
 
     try {
@@ -185,13 +236,13 @@ router.post("/commit", requireAuth, async (req, res) => {
         db.prepare(
           `UPDATE perfumes SET internal_code=?, name=?, brand=?, gender=?, family=?, type=?, size=?, description=?,
             price=?, old_price=?, cost=?, stock=?, min_stock=?, notes_salida=?, notes_corazon=?, notes_fondo=?,
-            intensidad=?, duracion=?, visible=?, destacado=?, oferta=?, nuevo=?, mas_vendido=?, updated_at=datetime('now')
+            intensidad=?, duracion=?, visible=?, destacado=?, oferta=?, nuevo=?, mas_vendido=?, kind=?, updated_at=datetime('now')
           WHERE id=?`
         ).run(
           fields.internal_code, fields.name, fields.brand, fields.gender, fields.family, fields.type, fields.size, fields.description,
           fields.price, fields.old_price, fields.cost, fields.stock, fields.min_stock,
           fields.notes_salida, fields.notes_corazon, fields.notes_fondo, fields.intensidad, fields.duracion,
-          fields.visible, fields.destacado, fields.oferta, fields.nuevo, fields.mas_vendido,
+          fields.visible, fields.destacado, fields.oferta, fields.nuevo, fields.mas_vendido, fields.kind,
           id
         );
         updated++;
@@ -199,16 +250,19 @@ router.post("/commit", requireAuth, async (req, res) => {
         db.prepare(
           `INSERT INTO perfumes (id, internal_code, name, brand, gender, family, type, size, description,
             price, old_price, cost, stock, min_stock, notes_salida, notes_corazon, notes_fondo,
-            intensidad, duracion, visible, destacado, oferta, nuevo, mas_vendido)
-          VALUES (?,?,?,?,?,?,?,?,?, ?,?,?,?,?, ?,?,?, ?,?,?,?,?,?,?)`
+            intensidad, duracion, visible, destacado, oferta, nuevo, mas_vendido, kind)
+          VALUES (?,?,?,?,?,?,?,?,?, ?,?,?,?,?, ?,?,?, ?,?,?,?,?,?,?,?)`
         ).run(
           id, fields.internal_code, fields.name, fields.brand, fields.gender, fields.family, fields.type, fields.size, fields.description,
           fields.price, fields.old_price, fields.cost, fields.stock, fields.min_stock,
           fields.notes_salida, fields.notes_corazon, fields.notes_fondo,
-          fields.intensidad, fields.duracion, fields.visible, fields.destacado, fields.oferta, fields.nuevo, fields.mas_vendido
+          fields.intensidad, fields.duracion, fields.visible, fields.destacado, fields.oferta, fields.nuevo, fields.mas_vendido,
+          fields.kind
         );
         created++;
       }
+
+      if (variants.length) upsertVariants(id, variants);
 
       if (imageUrl) {
         db.prepare(`DELETE FROM images WHERE perfume_id = ?`).run(id);
@@ -244,7 +298,10 @@ router.get("/history", requireAuth, (_req, res) => {
 // GET /api/import/export -> exporta todo el catálogo a XLSX
 router.get("/export", requireAuth, (_req, res) => {
   const rows = db.prepare(`SELECT * FROM perfumes ORDER BY created_at DESC`).all() as any[];
-  const data = rows.map((r) => ({
+  const data = rows.map((r) => {
+    const variants = listVariants(r.id);
+    const bySize = (size: string) => variants.find((v) => v.size === size);
+    return {
     SKU: r.id,
     "Código interno": r.internal_code || "",
     Nombre: r.name,
@@ -254,6 +311,12 @@ router.get("/export", requireAuth, (_req, res) => {
     Tipo: r.type,
     Tamaño: r.size,
     Precio: r.price,
+    "Precio 2ml": bySize("2ml")?.price || "",
+    "Precio 5ml": bySize("5ml")?.price || "",
+    "Precio 10ml": bySize("10ml")?.price || "",
+    "Stock 2ml": bySize("2ml")?.stock ?? "",
+    "Stock 5ml": bySize("5ml")?.stock ?? "",
+    "Stock 10ml": bySize("10ml")?.stock ?? "",
     "Precio oferta": r.old_price || "",
     Costo: r.cost || "",
     Stock: r.stock,
@@ -268,7 +331,8 @@ router.get("/export", requireAuth, (_req, res) => {
     Oferta: r.oferta ? "si" : "no",
     Nuevo: r.nuevo ? "si" : "no",
     "Más vendido": r.mas_vendido ? "si" : "no",
-  }));
+  };
+  });
 
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(data);

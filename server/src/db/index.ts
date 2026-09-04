@@ -57,25 +57,29 @@ export function migrate() {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
-    CREATE TABLE IF NOT EXISTS images (
+    CREATE TABLE IF NOT EXISTS variants (
       id TEXT PRIMARY KEY,
       perfume_id TEXT NOT NULL REFERENCES perfumes(id) ON DELETE CASCADE,
-      url TEXT NOT NULL,
-      "order" INTEGER NOT NULL DEFAULT 0,
-      is_main INTEGER NOT NULL DEFAULT 0
+      size TEXT NOT NULL,
+      price REAL NOT NULL DEFAULT 0,
+      stock INTEGER NOT NULL DEFAULT 0,
+      "order" INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS settings (
       id INTEGER PRIMARY KEY CHECK (id = 1),
       whatsapp_number TEXT NOT NULL DEFAULT '5491100000000',
+      whatsapp_number_femenino TEXT NOT NULL DEFAULT '',
+      whatsapp_number_masculino TEXT NOT NULL DEFAULT '',
       whatsapp_message TEXT NOT NULL DEFAULT 'Hola! Quiero realizar el siguiente pedido:',
       store_name TEXT NOT NULL DEFAULT 'Perfumería',
       store_name_accent TEXT NOT NULL DEFAULT 'Árabe',
       logo_url TEXT DEFAULT '/uploads/brand-logo.jpeg',
       banner_url TEXT,
-      primary_color TEXT NOT NULL DEFAULT '#6E1E39',
-      accent_color TEXT NOT NULL DEFAULT '#B79358',
+      primary_color TEXT NOT NULL DEFAULT '#3D3229',
+      accent_color TEXT NOT NULL DEFAULT '#A68B5B',
       instagram_url TEXT,
+      instagram_url_femenino TEXT NOT NULL DEFAULT '',
       facebook_url TEXT,
       schedule TEXT NOT NULL DEFAULT 'Lun a Sáb · 10 a 20h',
       currency TEXT NOT NULL DEFAULT 'ARS',
@@ -97,5 +101,36 @@ export function migrate() {
   const settingsRow = db.prepare("SELECT id FROM settings WHERE id = 1").get();
   if (!settingsRow) {
     db.prepare("INSERT INTO settings (id) VALUES (1)").run();
+  }
+
+  const columns = db.prepare(`PRAGMA table_info(settings)`).all() as { name: string }[];
+  const colNames = new Set(columns.map((c) => c.name));
+  if (!colNames.has("whatsapp_number_femenino")) {
+    db.exec(`ALTER TABLE settings ADD COLUMN whatsapp_number_femenino TEXT NOT NULL DEFAULT ''`);
+  }
+  if (!colNames.has("whatsapp_number_masculino")) {
+    db.exec(`ALTER TABLE settings ADD COLUMN whatsapp_number_masculino TEXT NOT NULL DEFAULT ''`);
+  }
+  if (!colNames.has("instagram_url_femenino")) {
+    db.exec(`ALTER TABLE settings ADD COLUMN instagram_url_femenino TEXT NOT NULL DEFAULT ''`);
+  }
+
+  const instagramFemenino = db.prepare(`SELECT instagram_url_femenino FROM settings WHERE id = 1`).get() as
+    | { instagram_url_femenino?: string }
+    | undefined;
+  if (!String(instagramFemenino?.instagram_url_femenino || "").trim()) {
+    db.prepare(`UPDATE settings SET instagram_url_femenino = ? WHERE id = 1`).run("https://www.instagram.com/noura.scents/");
+  }
+
+  const perfumeCols = db.prepare(`PRAGMA table_info(perfumes)`).all() as { name: string }[];
+  const perfumeColNames = new Set(perfumeCols.map((c) => c.name));
+  if (!perfumeColNames.has("kind")) {
+    db.exec(`ALTER TABLE perfumes ADD COLUMN kind TEXT NOT NULL DEFAULT 'bottle'`);
+  }
+
+  const colors = db.prepare(`SELECT primary_color FROM settings WHERE id = 1`).get() as { primary_color?: string } | undefined;
+  const current = String(colors?.primary_color || "").toLowerCase();
+  if (current === "#1e40af" || current === "#6e1e39") {
+    db.prepare(`UPDATE settings SET primary_color = '#3D3229', accent_color = '#A68B5B' WHERE id = 1`).run();
   }
 }

@@ -38,7 +38,7 @@ export default function Footer({ onScrollToCatalog, onQuickFilter }: FooterProps
 
   return (
     <footer className="relative text-white px-4 sm:px-6 pt-14 sm:pt-20 pb-8 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0A1628] via-[#0f2744] to-[#1e3a8a]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#1C1814] via-[#2A241E] to-[#3D3229]" />
 
       <div className="relative max-w-[1240px] mx-auto">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-[1.3fr_1fr_1fr] gap-10 mb-12 sm:mb-14">
@@ -52,43 +52,85 @@ export default function Footer({ onScrollToCatalog, onQuickFilter }: FooterProps
               <div>
                 <span className="font-display font-bold uppercase text-[20px] sm:text-[22px] tracking-[0.02em] block leading-tight text-white">
                   {settings.storeName}{" "}
-                  <span className="text-[#93C5FD]">{settings.storeNameAccent}</span>
+                  <span className="text-[#D4C4A8]">{settings.storeNameAccent}</span>
                 </span>
                 <span className="text-[9px] font-bold uppercase tracking-[0.22em] text-white/50 mt-1 block">
-                  Fragancia para hombres
+                  Femenino · Masculino · Unisex
                 </span>
               </div>
             </div>
             <p className="text-[13px] leading-relaxed text-white/65 mt-4 max-w-[320px]">
-              Perfumería masculina de nicho. Pedidos por WhatsApp, atención personalizada, sin vueltas.
+              Perfumería de nicho. Pedidos por WhatsApp, atención personalizada, sin vueltas.
             </p>
-            <div className="flex gap-3 mt-5">
+            <div className="flex gap-3 mt-5 flex-wrap">
+              {settings.instagramUrlFemenino && (
+                <a
+                  href={settings.instagramUrlFemenino}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex flex-col items-center gap-1 text-white no-underline"
+                  aria-label="Instagram mujeres"
+                >
+                  <span className="w-10 h-10 rounded-lg border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors">
+                    <InstagramIcon size={18} />
+                  </span>
+                  <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/50">Mujeres</span>
+                </a>
+              )}
               {settings.instagramUrl && (
-                <a href={settings.instagramUrl} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-lg border border-white/20 text-white flex items-center justify-center hover:bg-white/10 transition-colors">
-                  <InstagramIcon size={18} />
+                <a
+                  href={settings.instagramUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex flex-col items-center gap-1 text-white no-underline"
+                  aria-label="Instagram hombres"
+                >
+                  <span className="w-10 h-10 rounded-lg border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors">
+                    <InstagramIcon size={18} />
+                  </span>
+                  <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/50">Hombres</span>
                 </a>
               )}
               {settings.facebookUrl && (
-                <a href={settings.facebookUrl} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-lg border border-white/20 text-white flex items-center justify-center hover:bg-white/10 transition-colors">
-                  <FacebookIcon size={18} />
+                <a
+                  href={settings.facebookUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex flex-col items-center gap-1 text-white no-underline"
+                  aria-label="Facebook"
+                >
+                  <span className="w-10 h-10 rounded-lg border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors">
+                    <FacebookIcon size={18} />
+                  </span>
+                  <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/50">Facebook</span>
                 </a>
               )}
-              <a href={`https://wa.me/${settings.whatsappNumber}`} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-lg border border-white/20 text-white flex items-center justify-center hover:bg-white/10 transition-colors">
-                <MessageCircle size={18} />
+              <a
+                href={`https://wa.me/${settings.whatsappNumber}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex flex-col items-center gap-1 text-white no-underline"
+                aria-label="WhatsApp"
+              >
+                <span className="w-10 h-10 rounded-lg border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors">
+                  <MessageCircle size={18} />
+                </span>
+                <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/50">WhatsApp</span>
               </a>
             </div>
           </div>
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#93C5FD]">Explorar</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4C4A8]">Explorar</span>
             <div className="flex flex-col gap-2.5 mt-4 text-[13.5px] text-white/75">
               <button className="text-left hover:text-white transition-colors" onClick={onScrollToCatalog}>Catálogo completo</button>
+              <Link to="/decants" className="hover:text-white transition-colors no-underline text-white/75">Decants</Link>
               <button className="text-left hover:text-white transition-colors" onClick={() => goHomeAnd(onScrollToCatalog)}>Marcas</button>
               <button className="text-left hover:text-white transition-colors" onClick={() => goHomeAnd(() => onQuickFilter?.("oferta"))}>Ofertas</button>
               <Link to="/favoritos" className="hover:text-white transition-colors no-underline text-white/75">Favoritos</Link>
             </div>
           </div>
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#93C5FD]">Atención</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4C4A8]">Atención</span>
             <div className="flex flex-col gap-2.5 mt-4 text-[13.5px] text-white/75">
               <span>{settings.schedule}</span>
               <span>Pedidos 100% por WhatsApp</span>

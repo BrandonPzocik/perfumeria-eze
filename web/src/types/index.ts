@@ -24,6 +24,15 @@ export interface PerfumeImage {
   isMain: boolean;
 }
 
+export type PerfumeKind = "bottle" | "decant";
+
+export interface PerfumeVariant {
+  id: string;
+  size: string;
+  price: number;
+  stock: number;
+}
+
 export interface Perfume {
   id: string; // SKU, usado como identificador público
   internalCode?: string;
@@ -34,6 +43,8 @@ export interface Perfume {
   type: PerfumeType;
   size: string;
   description?: string;
+  kind?: PerfumeKind;
+  variants?: PerfumeVariant[];
 
   price: number;
   oldPrice?: number;
@@ -67,10 +78,14 @@ export interface Perfume {
 export interface CartLine {
   id: string;
   qty: number;
+  variantId?: string;
+  size?: string;
 }
 
 export interface StoreSettings {
   whatsappNumber: string;
+  whatsappNumberFemenino: string;
+  whatsappNumberMasculino: string;
   whatsappMessage: string;
   storeName: string;
   storeNameAccent: string;
@@ -79,6 +94,7 @@ export interface StoreSettings {
   primaryColor: string;
   accentColor: string;
   instagramUrl: string | null;
+  instagramUrlFemenino: string;
   facebookUrl: string | null;
   schedule: string;
   currency: string;

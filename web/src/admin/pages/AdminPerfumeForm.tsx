@@ -6,6 +6,7 @@ import { FAMILIES, GENDERS, TYPES } from "../../data/constants";
 import ChipInput from "../components/ChipInput";
 import ImageManager, { type ManagedImage } from "../components/ImageManager";
 import type { Perfume } from "../../types";
+import { DECANT_SIZES } from "../../lib/product";
 
 const EMPTY: any = {
   id: "",
@@ -30,6 +31,7 @@ const EMPTY: any = {
   oferta: false,
   nuevo: false,
   masVendido: false,
+  variants: DECANT_SIZES.map((size) => ({ size, price: "", stock: "" })),
   images: [] as ManagedImage[],
 };
 
@@ -55,6 +57,10 @@ export default function AdminPerfumeForm() {
           price: String(existing.price),
           oldPrice: existing.oldPrice ? String(existing.oldPrice) : "",
           cost: existing.cost ? String(existing.cost) : "",
+          variants: DECANT_SIZES.map((size) => {
+            const found = existing.variants?.find((v) => v.size === size);
+            return { id: found?.id, size, price: found ? String(found.price) : "", stock: found ? String(found.stock) : "" };
+          }),
           images: existing.images,
         });
       }
@@ -74,15 +80,27 @@ export default function AdminPerfumeForm() {
       return;
     }
 
+    const variants = (form.variants || [])
+      .map((v: { id?: string; size: string; price: string; stock: string }) => ({
+        id: v.id,
+        size: v.size,
+        price: Number(v.price) || 0,
+        stock: Number(v.stock) || 0,
+      }))
+      .filter((v: { price: number }) => v.price > 0);
+
     setSaving(true);
     const payload: Partial<Perfume> = {
       ...form,
+      kind: "bottle",
+      size: form.size,
       price: Number(form.price) || 0,
       oldPrice: form.oldPrice ? Number(form.oldPrice) : undefined,
       cost: form.cost ? Number(form.cost) : undefined,
       stock: Number(form.stock) || 0,
       minStock: Number(form.minStock) || 3,
       intensidad: Number(form.intensidad),
+      variants,
       images: form.images.map((img: ManagedImage) => ({ url: img.url, isMain: img.isMain })) as any,
     };
 
@@ -147,7 +165,12 @@ export default function AdminPerfumeForm() {
               </select>
             </Field>
             <Field label="Tamaño">
-              <input value={form.size} onChange={(e) => set("size", e.target.value)} className="input" placeholder="100ml" />
+              <input
+                value={form.size}
+                onChange={(e) => set("size", e.target.value)}
+                className="input"
+                placeholder="100ml"
+              />
             </Field>
           </div>
           <Field label="Descripción" className="mt-4">
@@ -156,7 +179,7 @@ export default function AdminPerfumeForm() {
         </section>
 
         <section className="bg-white border border-line rounded-md p-6">
-          <h2 className="text-[13px] font-semibold mb-4 text-wine">Precio y stock</h2>
+          <h2 className="text-[13px] font-semibold mb-4 text-wine">Precio y stock del frasco</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <Field label="Precio *">
               <input type="number" min="0" value={form.price} onChange={(e) => set("price", e.target.value)} required className="input" />
@@ -173,6 +196,46 @@ export default function AdminPerfumeForm() {
             <Field label="Stock mínimo">
               <input type="number" min="0" value={form.minStock} onChange={(e) => set("minStock", e.target.value)} className="input" />
             </Field>
+          </div>
+        </section>
+
+        <section className="bg-white border border-line rounded-md p-6">
+          <h2 className="text-[13px] font-semibold mb-1 text-wine">Decants</h2>
+          <p className="text-[12.5px] text-ink-soft mb-4">
+            Opcional. Completá precio solo en los tamaños que vendés. Si lo dejás vacío, ese decant no aparece en la tienda.
+          </p>
+          <div className="flex flex-col gap-3">
+            {(form.variants || []).map((v: { size: string; price: string; stock: string }, index: number) => (
+              <div key={v.size} className="grid grid-cols-3 gap-3 items-end">
+                <Field label="Tamaño">
+                  <input value={v.size} disabled className="input bg-[#F7F4EE]" />
+                </Field>
+                <Field label="Precio">
+                  <input
+                    type="number"
+                    min="0"
+                    value={v.price}
+                    onChange={(e) =>
+                      set("variants", form.variants.map((row: any, i: number) => (i === index ? { ...row, price: e.target.value } : row)))
+                    }
+                    className="input"
+                    placeholder="Sin decant"
+                  />
+                </Field>
+                <Field label="Stock">
+                  <input
+                    type="number"
+                    min="0"
+                    value={v.stock}
+                    onChange={(e) =>
+                      set("variants", form.variants.map((row: any, i: number) => (i === index ? { ...row, stock: e.target.value } : row)))
+                    }
+                    className="input"
+                    placeholder="0"
+                  />
+                </Field>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -229,7 +292,7 @@ export default function AdminPerfumeForm() {
       </form>
 
       <style>{`.input { border: 1px solid var(--line, rgba(23,21,26,0.12)); border-radius: 2px; padding: 10px 12px; font-size: 13.5px; outline: none; width: 100%; background: white; }
-      .input:focus { border-color: #6E1E39; }`}</style>
+      .input:focus { border-color: #A68B5B; }`}</style>
     </div>
   );
 }

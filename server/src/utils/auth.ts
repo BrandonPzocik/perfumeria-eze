@@ -19,7 +19,7 @@ export function verifyToken(token: string): JwtPayload {
 }
 
 export function hashPassword(plain: string): string {
-  return bcrypt.hashSync(plain, 10);
+  return bcrypt.hashSync(plain, 12);
 }
 
 export function comparePassword(plain: string, hash: string): boolean {

@@ -64,6 +64,7 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   const data = isJson ? await res.json() : await res.blob();
 
   if (!res.ok) {
+    if (res.status === 401 && opts.auth) setToken(null);
     const message = isJson && (data as any)?.error ? (data as any).error : "Ocurrió un error inesperado.";
     throw new ApiError(message, res.status);
   }

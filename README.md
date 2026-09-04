@@ -54,13 +54,9 @@ La primera vez que arranca, el servidor crea automáticamente:
 - **Catálogo público:** http://localhost:5173
 - **Panel de administrador:** http://localhost:5173/admin/login
 
-  ```
-  Email:      admin@maisonambar.com
-  Contraseña: admin1234
-  ```
-
-  ⚠️ Cambiá esta contraseña por una propia antes de usarlo en serio (ver
-  sección "Seguridad" más abajo).
+El usuario admin local se crea la primera vez con `ADMIN_EMAIL` y
+`ADMIN_PASSWORD` de `server/.env` (por defecto los valores de
+`server/.env.example`). No se muestran en el sitio.
 
 Si preferís levantar cada parte en una terminal separada (por ejemplo para
 ver los logs de cada una por separado):
@@ -267,9 +263,10 @@ El backend no está corriendo. Fijate que `npm run dev` (o `cd server && npm
 run dev`) esté andando y que no haya errores en esa terminal.
 
 **El panel de admin no deja entrar**
-Usá las credenciales de arriba. Si las cambiaste y las olvidaste, borrá
-`server/data.db` (perdés los datos cargados) o entrá directo a la base con
-cualquier cliente SQLite y actualizá la tabla `admin_users`.
+Usá el email y la contraseña de `ADMIN_EMAIL` / `ADMIN_PASSWORD` en
+`server/.env` (solo aplican la primera vez que se crea la base). Si las
+olvidaste, borrá `server/data.db` (perdés los datos cargados) o actualizá
+la tabla `admin_users` con cualquier cliente SQLite.
 
 **Node me tira un error de versión**
 Necesitás Node 20 (no 22). Con nvm: `nvm install && nvm use` en la carpeta del

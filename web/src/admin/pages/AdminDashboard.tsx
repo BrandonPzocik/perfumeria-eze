@@ -22,7 +22,7 @@ interface DashboardData {
   byBrand: { brand: string; count: number }[];
 }
 
-const COLORS = ["#1E40AF", "#3B82F6", "#2563EB", "#1E3A8A", "#60A5FA", "#93C5FD"];
+const COLORS = ["#3D3229", "#A68B5B", "#6B635A", "#C4B089", "#5C4E3A", "#D4C4A8"];
 
 function StatCard({ label, value, accent }: { label: string; value: number | string; accent?: string }) {
   return (
@@ -131,7 +131,7 @@ export default function AdminDashboard() {
               <XAxis type="number" hide />
               <YAxis type="category" dataKey="brand" width={110} tick={{ fontSize: 11.5 }} />
               <Tooltip />
-              <Bar dataKey="count" fill="#1E40AF" radius={[0, 4, 4, 0]} barSize={16} />
+              <Bar dataKey="count" fill="#3D3229" radius={[0, 4, 4, 0]} barSize={16} />
             </BarChart>
           </ResponsiveContainer>
         </div>

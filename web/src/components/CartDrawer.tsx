@@ -1,12 +1,14 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Minus, MessageCircle, Plus, ShoppingBag, X, ArrowLeft, User, MapPin } from "lucide-react";
 import Drawer from "./Drawer";
 import Bottle from "./Bottle";
 import { assetUrl } from "../lib/api";
 import { usePerfumesStore } from "../hooks/usePerfumesStore";
 import { useSettingsStore } from "../hooks/useSettingsStore";
-import { formatCurrency, buildWhatsAppOrderMessage, buildWhatsAppLink } from "../lib/format";
+import { formatCurrency, buildWhatsAppOrderMessage, buildWhatsAppLink, resolveWhatsAppNumberForCart } from "../lib/format";
 import { useCartStore } from "../hooks/useCartStore";
+import { lineDisplayName, lineKey, lineUnitPrice, perfumeImageUrl } from "../lib/product";
+import type { CartLine, Perfume } from "../types";
 
 export default function CartDrawer() {
   const isOpen = useCartStore((s) => s.isOpen);
@@ -27,11 +29,18 @@ export default function CartDrawer() {
   const [address, setAddress] = useState(customerAddress);
   const [formError, setFormError] = useState("");
 
+  useEffect(() => {
+    if (isOpen && checkoutStep === "details") {
+      setName(customerName);
+      setAddress(customerAddress);
+    }
+  }, [isOpen, checkoutStep, customerName, customerAddress]);
+
   const items = lines
     .map((l) => ({ ...l, product: items_.find((p) => p.id === l.id) }))
-    .filter((x): x is { id: string; qty: number; product: (typeof items_)[number] } => Boolean(x.product));
+    .filter((x): x is CartLine & { product: Perfume } => Boolean(x.product));
 
-  const total = items.reduce((sum, i) => sum + i.product.price * i.qty, 0);
+  const total = items.reduce((sum, i) => sum + lineUnitPrice(i, i.product) * i.qty, 0);
 
   const handleCheckout = () => {
     items.forEach((i) => registerEvent(i.product.id, "whatsapp"));
@@ -48,7 +57,7 @@ export default function CartDrawer() {
     const trimmedName = name.trim();
     const trimmedAddress = address.trim();
     if (!trimmedName || !trimmedAddress) {
-      setFormError("Completá tu nombre y dirección para continuar.");
+      setFormError("Completá tu nombre y ciudad para continuar.");
       return;
     }
     setFormError("");
@@ -62,13 +71,13 @@ export default function CartDrawer() {
       trimmedName,
       trimmedAddress
     );
-    const waHref = buildWhatsAppLink(message, settings.whatsappNumber);
+    const waHref = buildWhatsAppLink(message, resolveWhatsAppNumberForCart(items.map((i) => i.product), settings));
     handleCheckout();
     window.open(waHref, "_blank", "noopener,noreferrer");
   };
 
   const drawerTitle = checkoutStep === "details"
-    ? "Datos de envío"
+    ? "Tus datos"
     : `Tu selección (${items.length})`;
 
   return (
@@ -93,7 +102,7 @@ export default function CartDrawer() {
                 Continuar con el pedido
               </button>
               <p className="text-[10.5px] text-ink-soft text-center mt-2.5 opacity-75">
-                Te pediremos tu nombre y dirección antes de enviar el pedido por WhatsApp.
+                Te pediremos tu nombre y ciudad antes de enviar el pedido por WhatsApp.
               </p>
             </div>
           ) : (
@@ -123,16 +132,16 @@ export default function CartDrawer() {
                 </div>
                 <div>
                   <label htmlFor="cart-address" className="flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wide text-ink-soft mb-1.5">
-                    <MapPin size={13} /> Dirección de envío
+                    <MapPin size={13} /> Ciudad
                   </label>
-                  <textarea
+                  <input
                     id="cart-address"
+                    type="text"
                     required
-                    rows={3}
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Calle, número, localidad, código postal…"
-                    className="input-field resize-none"
+                    placeholder="Ej: Córdoba"
+                    className="input-field"
                   />
                 </div>
               </div>
@@ -150,7 +159,7 @@ export default function CartDrawer() {
                 <MessageCircle size={16} /> Enviar pedido por WhatsApp
               </button>
               <p className="text-[10.5px] text-ink-soft text-center mt-2.5 opacity-75">
-                Se abrirá WhatsApp con tu pedido y datos de envío.
+                Se abrirá WhatsApp con tu pedido, nombre y ciudad ya completos.
               </p>
             </form>
           )
@@ -172,19 +181,21 @@ export default function CartDrawer() {
           <p className="text-[13px] text-ink-soft mb-4">
             Revisá tu pedido antes de confirmar:
           </p>
-          {items.map(({ product, qty }) => (
-            <div key={product.id} className="flex justify-between py-2.5 border-b border-line-soft last:border-0 text-[13px]">
-              <span className="font-medium">{product.name} × {qty}</span>
-              <span className="font-semibold">{formatCurrency(product.price * qty, settings.currency)}</span>
+          {items.map((item) => (
+            <div key={lineKey(item)} className="flex justify-between py-2.5 border-b border-line-soft last:border-0 text-[13px]">
+              <span className="font-medium">{lineDisplayName(item, item.product)} × {item.qty}</span>
+              <span className="font-semibold">{formatCurrency(lineUnitPrice(item, item.product) * item.qty, settings.currency)}</span>
             </div>
           ))}
         </div>
       ) : (
         <div className="px-5 sm:px-6 py-2">
-          {items.map(({ product, qty }) => {
-            const img = assetUrl(product.images?.find((i) => i.isMain)?.url || product.images?.[0]?.url);
+          {items.map((item) => {
+            const { product, qty } = item;
+            const img = assetUrl(perfumeImageUrl(product, items_));
+            const unit = lineUnitPrice(item, product);
             return (
-              <div key={product.id} className="flex gap-4 py-4 border-b border-line-soft last:border-0">
+              <div key={lineKey(item)} className="flex gap-4 py-4 border-b border-line-soft last:border-0">
                 <div className="w-[68px] h-[84px] image-placeholder rounded-card flex-shrink-0 overflow-hidden shadow-card">
                   {img ? (
                     <img src={img} alt={product.name} className="w-full h-full object-cover" />
@@ -195,22 +206,24 @@ export default function CartDrawer() {
                 <div className="flex-1 flex flex-col gap-1 min-w-0">
                   <div className="flex justify-between gap-2">
                     <span className="font-semibold text-sm truncate">{product.name}</span>
-                    <button onClick={() => removeItem(product.id)} className="text-ink-soft flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-md hover:bg-line-soft" aria-label="Quitar">
+                    <button onClick={() => removeItem(product.id, item.variantId)} className="text-ink-soft flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-md hover:bg-line-soft" aria-label="Quitar">
                       <X size={14} />
                     </button>
                   </div>
-                  <span className="text-[11.5px] text-ink-soft">{product.type} · {product.size}</span>
+                  <span className="text-[11.5px] text-ink-soft">
+                    {item.size ? `Decant ${item.size}` : `${product.type} · ${product.size}`}
+                  </span>
                   <div className="flex justify-between items-center mt-1.5">
                     <div className="flex items-center border border-line rounded-full bg-stone">
-                      <button onClick={() => setQty(product.id, qty - 1)} className="px-3 py-1.5 hover:bg-line-soft rounded-l-full transition-colors" aria-label="Restar">
+                      <button onClick={() => setQty(product.id, qty - 1, item.variantId)} className="px-3 py-1.5 hover:bg-line-soft rounded-l-full transition-colors" aria-label="Restar">
                         <Minus size={12} />
                       </button>
                       <span className="text-[12.5px] w-5 text-center font-medium">{qty}</span>
-                      <button onClick={() => setQty(product.id, qty + 1)} className="px-3 py-1.5 hover:bg-line-soft rounded-r-full transition-colors" aria-label="Sumar">
+                      <button onClick={() => setQty(product.id, qty + 1, item.variantId)} className="px-3 py-1.5 hover:bg-line-soft rounded-r-full transition-colors" aria-label="Sumar">
                         <Plus size={12} />
                       </button>
                     </div>
-                    <span className="font-semibold text-[14px]">{formatCurrency(product.price * qty, settings.currency)}</span>
+                    <span className="font-semibold text-[14px]">{formatCurrency(unit * qty, settings.currency)}</span>
                   </div>
                 </div>
               </div>

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { CartLine, Perfume } from "../types";
+import type { CartLine, Perfume, PerfumeVariant } from "../types";
+import { cartLineKey } from "../lib/product";
 
 interface CartState {
   lines: CartLine[];
@@ -9,13 +10,18 @@ interface CartState {
   customerName: string;
   customerAddress: string;
   open: () => void;
+  openForCheckout: () => void;
   close: () => void;
-  addItem: (product: Perfume, qty?: number) => void;
-  setQty: (id: string, qty: number) => void;
-  removeItem: (id: string) => void;
+  addItem: (product: Perfume, opts?: { qty?: number; variant?: PerfumeVariant }) => void;
+  setQty: (id: string, qty: number, variantId?: string) => void;
+  removeItem: (id: string, variantId?: string) => void;
   clear: () => void;
   setCheckoutStep: (step: "cart" | "details") => void;
   setCustomerInfo: (name: string, address: string) => void;
+}
+
+function sameLine(line: CartLine, id: string, variantId?: string) {
+  return cartLineKey(line.id, line.variantId) === cartLineKey(id, variantId);
 }
 
 export const useCartStore = create<CartState>()(
@@ -27,26 +33,31 @@ export const useCartStore = create<CartState>()(
       customerName: "",
       customerAddress: "",
       open: () => set({ isOpen: true }),
+      openForCheckout: () => set({ isOpen: true, checkoutStep: "details" }),
       close: () => set({ isOpen: false, checkoutStep: "cart" }),
-      addItem: (product, qty = 1) =>
+      addItem: (product, opts) =>
         set((state) => {
-          const existing = state.lines.find((l) => l.id === product.id);
+          const qty = opts?.qty ?? 1;
+          const variant = opts?.variant;
+          const variantId = variant?.id;
+          const size = variant?.size;
+          const existing = state.lines.find((l) => sameLine(l, product.id, variantId));
           if (existing) {
             return {
               lines: state.lines.map((l) =>
-                l.id === product.id ? { ...l, qty: l.qty + qty } : l
+                sameLine(l, product.id, variantId) ? { ...l, qty: l.qty + qty, size: size || l.size } : l
               ),
             };
           }
-          return { lines: [...state.lines, { id: product.id, qty }] };
+          return { lines: [...state.lines, { id: product.id, qty, variantId, size }] };
         }),
-      setQty: (id, qty) =>
+      setQty: (id, qty, variantId) =>
         set((state) => {
-          if (qty <= 0) return { lines: state.lines.filter((l) => l.id !== id) };
-          return { lines: state.lines.map((l) => (l.id === id ? { ...l, qty } : l)) };
+          if (qty <= 0) return { lines: state.lines.filter((l) => !sameLine(l, id, variantId)) };
+          return { lines: state.lines.map((l) => (sameLine(l, id, variantId) ? { ...l, qty } : l)) };
         }),
-      removeItem: (id) =>
-        set((state) => ({ lines: state.lines.filter((l) => l.id !== id) })),
+      removeItem: (id, variantId) =>
+        set((state) => ({ lines: state.lines.filter((l) => !sameLine(l, id, variantId)) })),
       clear: () => set({ lines: [], checkoutStep: "cart" }),
       setCheckoutStep: (step) => set({ checkoutStep: step }),
       setCustomerInfo: (name, address) => set({ customerName: name, customerAddress: address }),

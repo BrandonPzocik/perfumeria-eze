@@ -29,6 +29,12 @@ const FIELD_OPTIONS: { value: string; label: string }[] = [
   { value: "oferta", label: "Oferta" },
   { value: "nuevo", label: "Nuevo" },
   { value: "masVendido", label: "Más vendido" },
+  { value: "price2ml", label: "Precio 2ml (decant)" },
+  { value: "price5ml", label: "Precio 5ml (decant)" },
+  { value: "price10ml", label: "Precio 10ml (decant)" },
+  { value: "stock2ml", label: "Stock 2ml (decant)" },
+  { value: "stock5ml", label: "Stock 5ml (decant)" },
+  { value: "stock10ml", label: "Stock 10ml (decant)" },
 ];
 
 interface PreviewData {
@@ -97,13 +103,18 @@ export default function AdminImport() {
     setError(null);
   };
 
-  const hasRequired = Object.values(mapping).includes("id") && Object.values(mapping).includes("name") && Object.values(mapping).includes("brand");
+  const mappedFields = Object.values(mapping);
+  const hasName = mappedFields.includes("name");
+  const hasBrand = mappedFields.includes("brand");
+  const hasSku = mappedFields.includes("id");
+  const hasRequired = hasName && hasBrand && hasSku;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-[1100px]">
       <h1 className="font-display text-[28px] mb-1">Importar desde Excel</h1>
       <p className="text-[13.5px] text-ink-soft mb-7">
         Subí un archivo XLSX o CSV, mapeá las columnas y actualizá cientos de perfumes en minutos. Los perfumes se actualizan o crean según coincida el SKU.
+        Los precios 2ml / 5ml / 10ml se guardan en la misma ficha del frasco. Si no mapeás esos precios, el perfume queda sin decants.
       </p>
 
       {!preview && (
@@ -152,7 +163,7 @@ export default function AdminImport() {
             </div>
             {!hasRequired && (
               <p className="text-[12px] text-[#7A4A16] bg-gold/10 rounded-sm px-3 py-2 mt-4 flex items-center gap-2">
-                <AlertTriangle size={14} /> Necesitás mapear al menos SKU, Nombre y Marca para poder importar.
+                <AlertTriangle size={14} /> Necesitás mapear SKU, nombre y marca. Los precios 2ml / 5ml / 10ml son opcionales.
               </p>
             )}
           </div>

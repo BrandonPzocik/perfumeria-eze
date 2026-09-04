@@ -35,6 +35,7 @@ export default function Header({ query, onQueryChange, onScrollToCatalog, onQuic
 
   const navItems = [
     { label: "Catálogo", action: () => goHomeAnd(onScrollToCatalog) },
+    { label: "Decants", action: () => { setMobileNav(false); onQueryChange(""); navigate("/decants"); } },
     { label: "Ofertas", action: () => goHomeAnd(() => onQuickFilter?.("oferta")) },
     { label: "Nuevos ingresos", action: () => goHomeAnd(() => onQuickFilter?.("nuevo")) },
     { label: "Favoritos", action: () => { setMobileNav(false); navigate("/favoritos"); } },
@@ -57,7 +58,7 @@ export default function Header({ query, onQueryChange, onScrollToCatalog, onQuic
               <StoreLogo
                 settingsLogo={settings.logoUrl}
                 alt={settings.storeName}
-                className="w-9 h-9 sm:w-10 sm:h-10 object-contain flex-shrink-0 group-hover:scale-105 transition-transform"
+                className="w-11 h-11 sm:w-12 sm:h-12 object-contain flex-shrink-0 group-hover:scale-105 transition-transform"
               />
               <div className="min-w-0 hidden xs:block sm:block">
                 <span className="font-display font-bold uppercase text-[16px] sm:text-[19px] tracking-wide truncate block leading-none">
@@ -65,13 +66,13 @@ export default function Header({ query, onQueryChange, onScrollToCatalog, onQuic
                   <span className="text-primary">{settings.storeNameAccent}</span>
                 </span>
                 <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-accent/80 hidden sm:block mt-0.5">
-                  Fragancia para hombres
+                  Femenino · Masculino · Unisex
                 </span>
               </div>
             </Link>
 
-            <nav className="hidden md:flex gap-6 text-[13px] font-semibold">
-              {navItems.slice(0, 3).map((item) => (
+            <nav className="hidden md:flex gap-5 lg:gap-6 text-[13px] font-semibold">
+              {navItems.slice(0, 4).map((item) => (
                 <span key={item.label} className="nav-link cursor-pointer text-ink-soft hover:text-primary transition-colors" onClick={item.action}>
                   {item.label}
                 </span>

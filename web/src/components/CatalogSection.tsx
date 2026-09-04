@@ -36,10 +36,12 @@ export default function CatalogSection({ query, quickFilter }: CatalogSectionPro
     if (quickFilter) setActiveTag(quickFilter.tag);
   }, [quickFilter]);
 
-  const brands = useMemo(() => Array.from(new Set(items.map((p) => p.brand))).sort(), [items]);
+  const catalogItems = items;
+
+  const brands = useMemo(() => Array.from(new Set(catalogItems.map((p) => p.brand))).sort(), [catalogItems]);
 
   const filtered = useMemo(() => {
-    return items.filter((p) => {
+    return catalogItems.filter((p) => {
       if (query && !`${p.name} ${p.brand} ${p.family} ${p.id}`.toLowerCase().includes(query.toLowerCase())) {
         return false;
       }
@@ -49,10 +51,10 @@ export default function CatalogSection({ query, quickFilter }: CatalogSectionPro
       if (activeTag !== "Todos" && !p.tags.includes(activeTag as any)) return false;
       return true;
     });
-  }, [items, query, activeFamily, activeGender, activeBrand, activeTag]);
+  }, [catalogItems, query, activeFamily, activeGender, activeBrand, activeTag]);
 
   return (
-    <section id="catalogo" className="max-w-[1240px] mx-auto px-4 sm:px-6 pt-12 sm:pt-[70px] pb-16 sm:pb-[100px] scroll-mt-[64px] sm:scroll-mt-[72px]">
+    <section id="catalogo" className="max-w-[1240px] mx-auto px-4 sm:px-6 pt-12 sm:pt-[70px] pb-8 sm:pb-12 scroll-mt-[64px] sm:scroll-mt-[72px]">
       <div className="mb-6 sm:mb-8">
         <span className="eyebrow">Todo el catálogo</span>
         <h2 className="font-display font-bold uppercase tracking-wide text-[clamp(28px,4vw,36px)] mt-1.5">Perfumes</h2>

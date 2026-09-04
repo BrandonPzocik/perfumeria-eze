@@ -4,6 +4,7 @@ import { Plus, Search, Copy, Pencil, Trash2, Eye, EyeOff, Star, Download } from 
 import { useAdminPerfumesStore } from "../hooks/useAdminPerfumesStore";
 import { formatCurrency } from "../../lib/format";
 import { API_BASE, getToken } from "../../lib/api";
+import { hasDecants } from "../../lib/product";
 
 export default function AdminPerfumes() {
   const { items, loading, error, fetchAll, remove, duplicate, toggle } = useAdminPerfumesStore();
@@ -100,13 +101,34 @@ export default function AdminPerfumes() {
                   <td className="px-4 py-3">
                     <div className="font-semibold">{p.name}</div>
                     <div className="text-ink-soft/60 text-[11.5px]">{p.brand} · {p.family}</div>
+                    {hasDecants(p) && (
+                      <span className="inline-block mt-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded-sm bg-accent/20 text-[#7A5A1E]">
+                        Decants {p.variants!.filter((v) => Number(v.price) > 0).map((v) => v.size).join(" · ")}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 font-mono text-[12px] text-ink-soft">{p.id}</td>
-                  <td className="px-4 py-3">{formatCurrency(p.price)}</td>
+                  <td className="px-4 py-3">
+                    <div>{formatCurrency(p.price)}</div>
+                    {p.variants && p.variants.length > 0 && (
+                      <div className="flex flex-col gap-0.5 text-[11px] text-ink-soft mt-1">
+                        {p.variants.map((v) => (
+                          <span key={v.id}>{v.size} · {formatCurrency(v.price)}</span>
+                        ))}
+                      </div>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <span className={p.stock === 0 ? "text-wine font-semibold" : p.stock <= p.minStock ? "text-[#7A4A16] font-semibold" : ""}>
                       {p.stock}
                     </span>
+                    {p.variants && p.variants.length > 0 && (
+                      <div className="flex flex-col gap-0.5 text-[11px] text-ink-soft mt-1">
+                        {p.variants.map((v) => (
+                          <span key={v.id} className={v.stock === 0 ? "text-wine font-semibold" : ""}>{v.size} · {v.stock}</span>
+                        ))}
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">

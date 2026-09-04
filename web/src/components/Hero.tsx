@@ -17,29 +17,32 @@ export default function Hero({ onExplore }: { onExplore: () => void }) {
       {banner ? (
         <>
           <img src={banner} alt="" className="absolute inset-0 w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-br from-[#0A1628]/92 via-[#0f2744]/88 to-[#1e3a8a]/85" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#1C1814]/92 via-[#2A241E]/88 to-[#3D3229]/85" />
         </>
       ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0A1628] via-[#0f2744] to-[#1e3a8a]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1C1814] via-[#2A241E] to-[#3D3229]" />
       )}
 
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_40%,rgba(59,130,246,0.18)_0%,transparent_55%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_40%,rgba(166,139,91,0.18)_0%,transparent_55%)] pointer-events-none" />
 
-      <div className="relative max-w-[1240px] mx-auto px-4 sm:px-6 pt-14 sm:pt-24 pb-14 sm:pb-20 grid grid-cols-1 md:grid-cols-2 gap-10 sm:gap-12 items-center">
+      <div className="relative max-w-[1240px] mx-auto px-4 sm:px-6 pt-7 sm:pt-16 md:pt-20 pb-8 sm:pb-16 grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-8 md:gap-10 items-center">
         <div className="animate-fadeInUp text-center md:text-left order-2 md:order-1">
-          <h1 className="font-display font-extrabold uppercase text-[clamp(36px,6.5vw,68px)] leading-[1.05] tracking-[0.02em] [text-shadow:0_2px_24px_rgba(0,0,0,0.35)]">
-            {settings.storeName}
+          <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.28em] text-white/55 mb-2 sm:mb-3">
+            {settings.storeName} {settings.storeNameAccent}
+          </p>
+          <h1 className="font-display font-extrabold uppercase text-[clamp(32px,7vw,62px)] leading-[0.92] tracking-[0.02em] [text-shadow:0_2px_24px_rgba(0,0,0,0.35)]">
+            Tu aroma.
             <br />
-            <span className="text-[#93C5FD]">{settings.storeNameAccent}</span>
+            <span className="text-[#D4C4A8]">Tu identidad.</span>
           </h1>
-          <p className="mt-3 text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.28em] text-white/60">
-            Fragancia para hombres
+          <p className="mt-3 sm:mt-4 text-[15px] sm:text-[19px] italic font-medium tracking-[0.01em] text-white/80 max-w-[380px] mx-auto md:mx-0 leading-snug">
+            Elegí cómo querés ser recordado.
           </p>
-          <p className="text-[15px] sm:text-base leading-relaxed max-w-[420px] text-white/75 mt-5 mb-8 font-normal mx-auto md:mx-0">
-            Perfumes de nicho y árabes, seleccionados para vos. Consultá, elegí y coordinamos por WhatsApp.
+          <p className="mt-3 sm:mt-4 text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.28em] text-white/45">
+            Femenino · Masculino · Unisex
           </p>
-          <div className="flex gap-3 flex-wrap justify-center md:justify-start">
-            <button onClick={onExplore} className="btn-accent shadow-lg shadow-blue-900/30">
+          <div className="flex gap-3 flex-wrap justify-center md:justify-start mt-5 sm:mt-8">
+            <button onClick={onExplore} className="btn-accent shadow-lg shadow-black/30">
               Ver catálogo <ArrowRight size={15} />
             </button>
             <a
@@ -53,13 +56,13 @@ export default function Hero({ onExplore }: { onExplore: () => void }) {
           </div>
         </div>
 
-        <div className="relative flex justify-center items-center order-1 md:order-2 animate-fadeInUp min-h-[200px] sm:min-h-[280px] md:min-h-[340px]" style={{ animationDelay: "0.12s" }}>
-          <div className="absolute w-[260px] sm:w-[320px] h-[260px] sm:h-[320px] rounded-full bg-blue-400/10 blur-3xl" />
+        <div className="relative flex justify-center items-center order-1 md:order-2 animate-fadeInUp min-h-[170px] sm:min-h-[260px] md:min-h-[420px]" style={{ animationDelay: "0.12s" }}>
+          <div className="absolute w-[220px] sm:w-[360px] md:w-[480px] h-[220px] sm:h-[360px] md:h-[480px] rounded-full bg-accent/10 blur-3xl" />
           <StoreLogo
             settingsLogo={settings.logoUrl}
             alt={`${settings.storeName} ${settings.storeNameAccent}`}
             hero
-            className="relative w-full max-w-[200px] sm:max-w-[280px] md:max-w-[340px] h-auto object-contain drop-shadow-[0_16px_48px_rgba(0,0,0,0.4)]"
+            className="relative w-full max-w-[250px] sm:max-w-[340px] md:max-w-[480px] lg:max-w-[540px] h-auto object-contain drop-shadow-[0_16px_48px_rgba(0,0,0,0.4)]"
           />
         </div>
       </div>

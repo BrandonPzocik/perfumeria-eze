@@ -13,6 +13,7 @@ import settingsRoutes from "./routes/settings";
 import uploadRoutes from "./routes/upload";
 import importRoutes from "./routes/import";
 import statsRoutes from "./routes/stats";
+import { securityHeaders } from "./middleware/securityHeaders";
 
 function assertProductionConfig() {
   if (process.env.NODE_ENV !== "production") return;
@@ -30,7 +31,13 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3001;
 
 app.set("trust proxy", 1);
-app.use(cors());
+app.disable("x-powered-by");
+app.use(securityHeaders);
+app.use(
+  cors({
+    origin: process.env.NODE_ENV === "production" ? false : true,
+  })
+);
 app.use(express.json({ limit: "5mb" }));
 
 app.use("/uploads", express.static(UPLOAD_DIR));
@@ -61,7 +68,12 @@ app.use((req, res) => {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);
-  res.status(err.status || 500).json({ error: err.message || "Error interno del servidor" });
+  if (err.name === "MulterError") {
+    return res.status(400).json({ error: "Archivo inválido o demasiado grande." });
+  }
+  const status = Number(err.status) || 500;
+  const publicMessage = status < 500 ? err.message || "Solicitud inválida" : "Error interno del servidor";
+  res.status(status).json({ error: publicMessage });
 });
 
 app.listen(PORT, "0.0.0.0", () => {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Sparkles, FileSpreadsheet, Settings, LogOut, ExternalLink, Menu } from "lucide-react";
 import StoreLogo from "../../components/StoreLogo";
@@ -25,7 +25,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <div>
           <div className="font-display font-bold uppercase text-[15px] leading-tight tracking-[0.02em] text-white">
             {settings.storeName}{" "}
-            <span className="text-[#93C5FD]">{settings.storeNameAccent}</span>
+            <span className="text-[#D4C4A8]">{settings.storeNameAccent}</span>
           </div>
           <div className="text-[10px] uppercase tracking-widest text-white/45 mt-1">Panel admin</div>
         </div>
@@ -73,17 +73,25 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 export default function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  useEffect(() => {
+    const el = document.createElement("meta");
+    el.name = "robots";
+    el.content = "noindex, nofollow";
+    document.head.appendChild(el);
+    return () => el.remove();
+  }, []);
+
   return (
     <div className="min-h-screen bg-stone">
       {/* Sidebar fijo en desktop */}
-      <aside className="hidden lg:flex fixed top-0 left-0 h-screen w-[240px] bg-gradient-to-b from-[#0A1628] to-[#0f2744] text-white flex-col z-30">
+      <aside className="hidden lg:flex fixed top-0 left-0 h-screen w-[240px] bg-gradient-to-b from-[#1C1814] to-[#2A241E] text-white flex-col z-30">
         <SidebarContent />
       </aside>
 
       {mobileOpen && (
         <>
-          <div className="fixed inset-0 bg-[#0A1628]/60 z-40 lg:hidden animate-backdropIn" onClick={() => setMobileOpen(false)} />
-          <aside className="fixed top-0 left-0 h-full w-[min(280px,85vw)] bg-gradient-to-b from-[#0A1628] to-[#0f2744] text-white z-50 flex flex-col animate-slideInLeft lg:hidden">
+          <div className="fixed inset-0 bg-[#1C1814]/60 z-40 lg:hidden animate-backdropIn" onClick={() => setMobileOpen(false)} />
+          <aside className="fixed top-0 left-0 h-full w-[min(280px,85vw)] bg-gradient-to-b from-[#1C1814] to-[#2A241E] text-white z-50 flex flex-col animate-slideInLeft lg:hidden">
             <SidebarContent onNavigate={() => setMobileOpen(false)} />
           </aside>
         </>

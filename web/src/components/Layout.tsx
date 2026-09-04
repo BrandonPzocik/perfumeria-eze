@@ -36,6 +36,7 @@ export default function Layout() {
 
   const handleQueryChange = (q: string) => {
     setQuery(q);
+    if (location.pathname.startsWith("/decants")) return;
     if (location.pathname !== "/") navigate("/");
   };
 

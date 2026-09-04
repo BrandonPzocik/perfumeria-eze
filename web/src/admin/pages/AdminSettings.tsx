@@ -91,9 +91,19 @@ export default function AdminSettings() {
 
         <section className="bg-white border border-line rounded-md p-6">
           <h2 className="text-[13px] font-semibold mb-4 text-wine">WhatsApp</h2>
+          <p className="text-[12.5px] text-ink-soft mb-4 leading-relaxed">
+            Cada consulta de un perfume va al número según el género: femeninos a ella, masculinos a él.
+            El número general se usa para el botón flotante, unisex y carritos mixtos.
+          </p>
           <div className="grid grid-cols-1 gap-4">
-            <Field label="Número de WhatsApp (con código de país, sin + ni espacios)">
+            <Field label="WhatsApp general (consultas, unisex y carrito mixto)">
               <input value={form.whatsappNumber} onChange={(e) => set("whatsappNumber", e.target.value)} className="input" placeholder="5491123456789" />
+            </Field>
+            <Field label="WhatsApp perfumes femeninos">
+              <input value={form.whatsappNumberFemenino || ""} onChange={(e) => set("whatsappNumberFemenino", e.target.value)} className="input" placeholder="54911…" />
+            </Field>
+            <Field label="WhatsApp perfumes masculinos">
+              <input value={form.whatsappNumberMasculino || ""} onChange={(e) => set("whatsappNumberMasculino", e.target.value)} className="input" placeholder="54911…" />
             </Field>
             <Field label="Mensaje inicial del pedido">
               <textarea value={form.whatsappMessage} onChange={(e) => set("whatsappMessage", e.target.value)} rows={2} className="input resize-none" />
@@ -104,8 +114,11 @@ export default function AdminSettings() {
         <section className="bg-white border border-line rounded-md p-6">
           <h2 className="text-[13px] font-semibold mb-4 text-wine">Redes y horarios</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Instagram (URL)">
-              <input value={form.instagramUrl || ""} onChange={(e) => set("instagramUrl", e.target.value)} className="input" placeholder="https://instagram.com/tu_marca" />
+            <Field label="Instagram hombres (URL)">
+              <input value={form.instagramUrl || ""} onChange={(e) => set("instagramUrl", e.target.value)} className="input" placeholder="https://instagram.com/cuenta_hombres" />
+            </Field>
+            <Field label="Instagram mujeres (URL)">
+              <input value={form.instagramUrlFemenino || ""} onChange={(e) => set("instagramUrlFemenino", e.target.value)} className="input" placeholder="https://instagram.com/cuenta_mujeres" />
             </Field>
             <Field label="Facebook (URL)">
               <input value={form.facebookUrl || ""} onChange={(e) => set("facebookUrl", e.target.value)} className="input" placeholder="https://facebook.com/tu_marca" />
@@ -153,7 +166,7 @@ export default function AdminSettings() {
       </form>
 
       <style>{`.input { border: 1px solid rgba(23,21,26,0.12); border-radius: 2px; padding: 10px 12px; font-size: 13.5px; outline: none; width: 100%; background: white; }
-      .input:focus { border-color: #6E1E39; }`}</style>
+      .input:focus { border-color: #A68B5B; }`}</style>
     </div>
   );
 }

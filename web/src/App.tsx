@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import Favorites from "./pages/Favorites";
+import Decants from "./pages/Decants";
 
 import AdminLogin from "./admin/pages/AdminLogin";
 import AdminLayout from "./admin/components/AdminLayout";
@@ -19,6 +20,8 @@ export default function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
           <Route path="/producto/:id" element={<Home />} />
+          <Route path="/decants" element={<Decants />} />
+          <Route path="/decants/:id" element={<Decants />} />
           <Route path="/favoritos" element={<Favorites />} />
         </Route>
 

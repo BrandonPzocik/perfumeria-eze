@@ -14,13 +14,16 @@ const storage = multer.diskStorage({
 });
 
 const ALLOWED = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"]);
+const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"]);
 
 const upload = multer({
   storage,
   limits: { fileSize: 8 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    if (!ALLOWED.has(ext)) return cb(new Error("Formato de imagen no soportado."));
+    if (!ALLOWED.has(ext) || !ALLOWED_MIME.has(file.mimetype)) {
+      return cb(new Error("Formato de imagen no soportado."));
+    }
     cb(null, true);
   },
 });
