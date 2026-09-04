@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Plus, Search, Copy, Pencil, Trash2, Eye, EyeOff, Star, Download } from "lucide-react";
 import { useAdminPerfumesStore } from "../hooks/useAdminPerfumesStore";
 import { formatCurrency } from "../../lib/format";
@@ -8,6 +8,7 @@ import { hasDecants } from "../../lib/product";
 
 export default function AdminPerfumes() {
   const { items, loading, error, fetchAll, remove, duplicate, toggle } = useAdminPerfumesStore();
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
@@ -97,7 +98,11 @@ export default function AdminPerfumes() {
               <tr><td colSpan={6} className="px-4 py-10 text-center text-ink-soft">No hay perfumes que coincidan.</td></tr>
             ) : (
               filtered.map((p) => (
-                <tr key={p.id} className="border-b border-line-soft hover:bg-[#FAF8F3]">
+                <tr
+                  key={p.id}
+                  className="border-b border-line-soft hover:bg-[#FAF8F3] cursor-pointer"
+                  onClick={() => navigate(`/admin/perfumes/${p.id}`)}
+                >
                   <td className="px-4 py-3">
                     <div className="font-semibold">{p.name}</div>
                     <div className="text-ink-soft/60 text-[11.5px]">{p.brand} · {p.family}</div>
@@ -138,7 +143,7 @@ export default function AdminPerfumes() {
                       {p.destacado && <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-sm bg-gold/20 text-[#7A5A1E]">Destacado</span>}
                     </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-1">
                       <button title="Destacar" onClick={() => toggle(p.id, "destacado", !p.destacado)} className={`p-1.5 rounded hover:bg-line-soft ${p.destacado ? "text-gold" : "text-ink-soft"}`}>
                         <Star size={15} fill={p.destacado ? "#B79358" : "none"} />
