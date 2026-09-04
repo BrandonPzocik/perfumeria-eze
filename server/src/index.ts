@@ -1,9 +1,11 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import fs from "fs";
 import path from "path";
 import { migrate } from "./db";
 import { seed } from "./db/seed";
+import { UPLOAD_DIR, WEB_DIST } from "./paths";
 
 import authRoutes from "./routes/auth";
 import perfumeRoutes from "./routes/perfumes";
@@ -12,16 +14,25 @@ import uploadRoutes from "./routes/upload";
 import importRoutes from "./routes/import";
 import statsRoutes from "./routes/stats";
 
+function assertProductionConfig() {
+  if (process.env.NODE_ENV !== "production") return;
+  const secret = process.env.JWT_SECRET || "";
+  if (!secret || /cambia-esta-clave|dev-secret-change-me/i.test(secret)) {
+    throw new Error("Definí JWT_SECRET con una clave larga y aleatoria en las variables de entorno de Render.");
+  }
+}
+
+assertProductionConfig();
 migrate();
 seed();
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3001;
 
+app.set("trust proxy", 1);
 app.use(cors());
 app.use(express.json({ limit: "5mb" }));
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, "..", "uploads");
 app.use("/uploads", express.static(UPLOAD_DIR));
 
 app.get("/api/health", (_req, res) => res.json({ ok: true, service: "maison-ambar-api" }));
@@ -33,6 +44,16 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/import", importRoutes);
 app.use("/api/stats", statsRoutes);
 
+const indexHtml = path.join(WEB_DIST, "index.html");
+if (fs.existsSync(indexHtml)) {
+  app.use(express.static(WEB_DIST));
+  app.use((req, res, next) => {
+    if (req.method !== "GET" && req.method !== "HEAD") return next();
+    if (req.path.startsWith("/api") || req.path.startsWith("/uploads")) return next();
+    res.sendFile(indexHtml);
+  });
+}
+
 app.use((req, res) => {
   res.status(404).json({ error: `No existe la ruta ${req.method} ${req.path}` });
 });
@@ -43,7 +64,7 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
   res.status(err.status || 500).json({ error: err.message || "Error interno del servidor" });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`\n🌸 API MAISON Ámbar corriendo en http://localhost:${PORT}`);
   console.log(`   Salud: http://localhost:${PORT}/api/health\n`);
 });

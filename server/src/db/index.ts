@@ -1,11 +1,7 @@
 import Database from "better-sqlite3";
-import path from "path";
-import fs from "fs";
+import { DB_PATH, ensureDirs } from "../paths";
 
-const DB_PATH = process.env.DATABASE_FILE || path.join(__dirname, "..", "..", "data.db");
-
-// Aseguramos que exista la carpeta contenedora si DATABASE_FILE trae subcarpetas
-fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+ensureDirs();
 
 export const db = new Database(DB_PATH);
 

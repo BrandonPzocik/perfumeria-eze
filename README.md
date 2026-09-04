@@ -4,8 +4,9 @@ Proyecto completo y funcional: catálogo de perfumes con pedidos por WhatsApp
 (sin registro) + panel de administrador (con login) para cargar y gestionar
 todo el catálogo, incluida importación masiva desde Excel.
 
-**100% local, sin Docker, sin servicios externos.** La base de datos es un
-archivo SQLite que se crea solo la primera vez que corrés el servidor.
+**100% local para desarrollar** (sin Docker). En producción se despliega
+en **un solo servicio de Render**: el mismo Node sirve el catálogo, el panel
+y la API; SQLite y las fotos van en un disco persistente.
 
 ---
 
@@ -138,22 +139,96 @@ borrá `server/data.db` y volvé a arrancar.
 VITE_API_URL=http://localhost:3001/api
 ```
 
-Si en algún momento subís el backend a un servidor con otra URL, actualizá
-esta variable.
+En desarrollo local usá `http://localhost:3001/api`. En Render no hace falta
+tocar esta variable: el build de producción ya apunta a `/api` (mismo dominio).
 
 ---
 
-## 🔒 Seguridad antes de usarlo en producción
+## 🌐 Desplegar en Render (front + servidor juntos)
 
-Este proyecto está listo para **probar y usar localmente**. Antes de
-publicarlo en internet:
+Sí: **el catálogo y el servidor van en el mismo servicio de Render**.
+Queda una sola URL (por ejemplo `https://perfumeria-arabe.onrender.com`)
+que sirve el sitio, el panel `/admin` y la API. Las fotos y la base SQLite
+viven en un **disco persistente** para que no se borren en cada deploy.
 
-1. Cambiá `ADMIN_PASSWORD` en `server/.env` (o creá un nuevo admin y borrá
-   el de prueba) y cambiá `JWT_SECRET` por una clave larga y aleatoria.
-2. El backend no tiene HTTPS propio: si lo publicás, ponelo detrás de un
-   proxy (nginx, Caddy, Vercel, Railway, Render, etc.) que dé HTTPS.
-3. `server/data.db` y `server/uploads` contienen todos tus datos: hacé
-   backups periódicos (son simples archivos, copiarlos alcanza).
+Hace falta el plan pago más chico (**Starter / 0.5 CPU · 512 MB**, ~USD 7/mes).
+El plan Free no admite disco y se apaga solo: perderías el catálogo y las imágenes.
+
+### 1. Subí estos cambios a GitHub
+
+Render despliega desde el repo (`BrandonPzocik/perfumeria-eze`). Commit y push
+de `main` con los archivos nuevos (`render.yaml`, etc.).
+
+### 2. Creá el servicio con el Blueprint (recomendado)
+
+1. Entrá a [dashboard.render.com](https://dashboard.render.com) y conectá GitHub.
+2. **New → Blueprint**.
+3. Elegí el repo `perfumeria-eze` y la rama `main`.
+4. Render lee `render.yaml` y te pide **solo** estas dos cosas (son el login del panel):
+   - `ADMIN_EMAIL` — el mail con el que vas a entrar a `/admin`
+   - `ADMIN_PASSWORD` — una contraseña fuerte, no `admin1234`
+5. Confirmá el create. `JWT_SECRET` se genera solo.
+
+Si preferís crearlo a mano: **New → Web Service** → el mismo repo →:
+
+| Campo | Valor |
+| --- | --- |
+| Runtime | Node |
+| Branch | `main` |
+| Build command | `npm run install:all && npm run build` |
+| Start command | `npm start` |
+| Instance type | `0.5 CPU / 512 MB` (Starter), **no Free** |
+| Health check path | `/api/health` |
+
+En **Advanced → Disk**: mount path `/data`, tamaño **1 GB**.
+
+Variables de entorno:
+
+```
+NODE_VERSION=20.20.2
+NODE_ENV=production
+DATABASE_FILE=/data/data.db
+UPLOAD_DIR=/data/uploads
+JWT_SECRET=<generá una clave larga y aleatoria>
+JWT_EXPIRES_IN=7d
+ADMIN_EMAIL=tu@email.com
+ADMIN_PASSWORD=<tu contraseña de admin>
+```
+
+No hace falta `VITE_API_URL`: el build de producción ya usa `/api` (mismo dominio).
+
+### 3. Esperá el primer deploy y abrí el sitio
+
+Cuando el deploy esté **Live**:
+
+- Catálogo: `https://<tu-servicio>.onrender.com`
+- Panel: `https://<tu-servicio>.onrender.com/admin/login`
+
+La primera vez la base arranca **vacía** (sin los 12 perfumes de ejemplo).
+Entrá al panel y cargá el catálogo, el WhatsApp, el logo y las fotos.
+
+`ADMIN_EMAIL` / `ADMIN_PASSWORD` **solo se usan si la base está vacía**.
+Si el primer deploy falló después de crear el admin, no se vuelven a leer:
+cambiá la contraseña desde un backup o borrá el archivo en el disco.
+
+### 4. Dominio propio (opcional)
+
+En el servicio → **Settings → Custom domains** → agregá `www.tutienda.com`
+y cargá el CNAME que te muestra Render en tu DNS.
+
+### 5. Backups
+
+Todo lo importante está en el disco `/data` (`data.db` + `uploads/`).
+En el servicio → **Disks** podés tomar un snapshot de vez en cuando.
+Si actualizás el catálogo seguido, un backup semanal alcanza.
+
+---
+
+## 🔒 Seguridad en producción
+
+1. Usá una contraseña de admin propia (la de prueba `admin1234` no se crea en Render).
+2. Render ya da HTTPS. No expongas `data.db` ni `uploads` en el repo (ya están en `.gitignore`).
+3. El disco no está disponible en el plan Free: no lo bajes de plan o perdés los datos.
 
 ---
 

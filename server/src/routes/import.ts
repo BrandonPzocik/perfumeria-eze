@@ -6,12 +6,10 @@ import fs from "fs";
 import { randomUUID } from "crypto";
 import { db } from "../db";
 import { requireAuth } from "../middleware/requireAuth";
+import { UPLOAD_DIR } from "../paths";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
-
-const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, "..", "..", "uploads");
-fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 // Encabezados esperados en español -> nuestro campo interno
 const HEADER_GUESSES: Record<string, string> = {

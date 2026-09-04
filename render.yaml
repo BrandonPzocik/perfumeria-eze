@@ -1,0 +1,32 @@
+# Blueprint de Render: un solo Web Service (front + API) + disco para SQLite y fotos.
+# El plan pago más chico es obligatorio: el plan Free no admite disco persistente
+# y se apaga con la inactividad (perderías la base y las imágenes).
+services:
+  - type: web
+    name: perfumeria-arabe
+    runtime: node
+    plan: 0.5c-512mb
+    buildCommand: npm run install:all && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 20.20.2
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_FILE
+        value: /data/data.db
+      - key: UPLOAD_DIR
+        value: /data/uploads
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+    disk:
+      name: catalog-data
+      mountPath: /data
+      sizeGB: 1

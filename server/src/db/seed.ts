@@ -18,21 +18,25 @@ const SAMPLE_PERFUMES = [
 ];
 
 export function seed() {
+  const isProd = process.env.NODE_ENV === "production";
   const adminCount = (db.prepare(`SELECT COUNT(*) as c FROM admin_users`).get() as any).c;
   if (adminCount === 0) {
-    const email = (process.env.ADMIN_EMAIL || "admin@maisonambar.com").toLowerCase();
-    const password = process.env.ADMIN_PASSWORD || "admin1234";
+    const email = (process.env.ADMIN_EMAIL || (isProd ? "" : "admin@maisonambar.com")).toLowerCase();
+    const password = process.env.ADMIN_PASSWORD || (isProd ? "" : "admin1234");
+    if (!email || !password) {
+      throw new Error("Definí ADMIN_EMAIL y ADMIN_PASSWORD en las variables de entorno antes del primer arranque.");
+    }
     db.prepare(`INSERT INTO admin_users (id, email, password_hash, name) VALUES (?,?,?,?)`).run(
       randomUUID(),
       email,
       hashPassword(password),
       "Administrador"
     );
-    console.log(`✔ Usuario admin creado -> ${email} / ${password}`);
+    console.log(isProd ? `✔ Usuario admin creado -> ${email}` : `✔ Usuario admin creado -> ${email} / ${password}`);
   }
 
   const perfumeCount = (db.prepare(`SELECT COUNT(*) as c FROM perfumes`).get() as any).c;
-  if (perfumeCount === 0) {
+  if (perfumeCount === 0 && !isProd) {
     const insert = db.prepare(
       `INSERT INTO perfumes (
         id, name, brand, gender, family, type, size, price, old_price, stock,
