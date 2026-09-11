@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Sparkles, FileSpreadsheet, Settings, LogOut, ExternalLink, Menu } from "lucide-react";
 import StoreLogo from "../../components/StoreLogo";
 import { useAdminAuthStore } from "../hooks/useAdminAuthStore";
@@ -72,6 +72,15 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
 export default function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
+  const scrollRef = useRef<HTMLElement>(null);
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [location.pathname]);
 
   useEffect(() => {
     const el = document.createElement("meta");
@@ -82,7 +91,7 @@ export default function AdminLayout() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-stone">
+    <div className="h-screen h-dvh overflow-hidden bg-stone">
       {/* Sidebar fijo en desktop */}
       <aside className="hidden lg:flex fixed top-0 left-0 h-screen w-[240px] bg-gradient-to-b from-[#1C1814] to-[#2A241E] text-white flex-col z-30">
         <SidebarContent />
@@ -98,15 +107,15 @@ export default function AdminLayout() {
       )}
 
       {/* Contenido con scroll independiente */}
-      <div className="lg:pl-[240px] flex flex-col min-h-screen">
-        <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-line bg-stone-soft sticky top-0 z-20">
+      <div className="lg:pl-[240px] flex flex-col h-full min-h-0">
+        <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-line bg-stone-soft flex-shrink-0 z-20">
           <button onClick={() => setMobileOpen(true)} aria-label="Menú" className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-primary/5 text-primary">
             <Menu size={20} />
           </button>
           <span className="font-display font-bold uppercase text-[16px] tracking-wide">Panel admin</span>
         </div>
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+        <main ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
           <Outlet />
         </main>
       </div>

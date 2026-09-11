@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Plus, Search, Copy, Pencil, Trash2, Eye, EyeOff, Star, Download } from "lucide-react";
 import { useAdminPerfumesStore } from "../hooks/useAdminPerfumesStore";
@@ -15,6 +15,14 @@ export default function AdminPerfumes() {
   useEffect(() => {
     fetchAll();
   }, [fetchAll]);
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    const scroller = document.querySelector("main");
+    if (scroller) scroller.scrollTop = 0;
+  }, []);
 
   const filtered = useMemo(() => {
     if (!query) return items;

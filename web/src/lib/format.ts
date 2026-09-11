@@ -9,6 +9,18 @@ export function formatCurrency(value: number, currency = "ARS"): string {
   });
 }
 
+/** Solo dígitos, para inputs de plata (76.000 → 76000). */
+export function parseMoneyDigits(raw: string): string {
+  return String(raw || "").replace(/\D/g, "");
+}
+
+/** Muestra miles con punto, estilo argentino: 76000 → 76.000 */
+export function formatThousands(raw: string | number): string {
+  const digits = parseMoneyDigits(String(raw ?? ""));
+  if (!digits) return "";
+  return Number(digits).toLocaleString("es-AR", { maximumFractionDigits: 0 });
+}
+
 export function buildWhatsAppOrderMessage(
   lines: CartLine[],
   products: Perfume[],

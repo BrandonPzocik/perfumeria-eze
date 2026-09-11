@@ -140,6 +140,25 @@ tocar esta variable: el build de producción ya apunta a `/api` (mismo dominio).
 
 ---
 
+## 🔗 Mostrar al cliente sin pagar (tu computadora prendida)
+
+Link HTTPS temporal con [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/). El catálogo y el panel funcionan desde el celular del cliente. **Si apagás la Mac o cerrás la terminal, el link se cae.** Cuando te paguen, pasás a Render.
+
+En la raíz del proyecto (con Node 20):
+
+```bash
+npm run share
+```
+
+La primera vez instala `cloudflared` con Homebrew si hace falta. Compila el sitio, lo sirve en el puerto `3080` (para no chocar con `npm run dev`) y imprime un link tipo `https://….trycloudflare.com`.
+
+- Catálogo: esa URL
+- Panel: `https://….trycloudflare.com/admin/login`
+- El link **cambia cada vez** que cortás y volvés a correr `npm run share`
+- Dejá esa terminal abierta mientras el cliente mira. Ctrl+C para cortar
+
+---
+
 ## 🌐 Desplegar en Render (front + servidor juntos)
 
 Sí: **el catálogo y el servidor van en el mismo servicio de Render**.

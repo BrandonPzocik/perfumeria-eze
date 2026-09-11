@@ -30,14 +30,11 @@ export default function Hero({ onExplore }: { onExplore: () => void }) {
           <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.28em] text-white/55 mb-2 sm:mb-3">
             {settings.storeName} {settings.storeNameAccent}
           </p>
-          <h1 className="font-display font-extrabold uppercase text-[clamp(32px,7vw,62px)] leading-[0.92] tracking-[0.02em] [text-shadow:0_2px_24px_rgba(0,0,0,0.35)]">
-            Tu aroma.
+          <h1 className="font-display font-extrabold uppercase text-[clamp(26px,5.8vw,48px)] leading-[1.02] tracking-[0.02em] [text-shadow:0_2px_24px_rgba(0,0,0,0.35)] max-w-[520px] mx-auto md:mx-0">
+            Tu esencia también se expresa
             <br />
-            <span className="text-[#D4C4A8]">Tu identidad.</span>
+            <span className="text-[#D4C4A8]">en el aroma que elegís llevar.</span>
           </h1>
-          <p className="mt-3 sm:mt-4 text-[15px] sm:text-[19px] italic font-medium tracking-[0.01em] text-white/80 max-w-[380px] mx-auto md:mx-0 leading-snug">
-            Elegí cómo querés ser recordado.
-          </p>
           <p className="mt-3 sm:mt-4 text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.28em] text-white/45">
             Femenino · Masculino · Unisex
           </p>

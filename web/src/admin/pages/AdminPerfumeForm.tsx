@@ -5,8 +5,10 @@ import { useAdminPerfumesStore } from "../hooks/useAdminPerfumesStore";
 import { FAMILIES, GENDERS, TYPES } from "../../data/constants";
 import ChipInput from "../components/ChipInput";
 import ImageManager, { type ManagedImage } from "../components/ImageManager";
+import MoneyInput from "../components/MoneyInput";
 import type { Perfume } from "../../types";
 import { DECANT_SIZES } from "../../lib/product";
+import { parseMoneyDigits } from "../../lib/format";
 
 const EMPTY: any = {
   id: "",
@@ -84,7 +86,7 @@ export default function AdminPerfumeForm() {
       .map((v: { id?: string; size: string; price: string; stock: string }) => ({
         id: v.id,
         size: v.size,
-        price: Number(v.price) || 0,
+        price: Number(parseMoneyDigits(String(v.price))) || 0,
         stock: Number(v.stock) || 0,
       }))
       .filter((v: { price: number }) => v.price > 0);
@@ -94,9 +96,9 @@ export default function AdminPerfumeForm() {
       ...form,
       kind: "bottle",
       size: form.size,
-      price: Number(form.price) || 0,
-      oldPrice: form.oldPrice ? Number(form.oldPrice) : undefined,
-      cost: form.cost ? Number(form.cost) : undefined,
+      price: Number(parseMoneyDigits(String(form.price))) || 0,
+      oldPrice: form.oldPrice ? Number(parseMoneyDigits(String(form.oldPrice))) : undefined,
+      cost: form.cost ? Number(parseMoneyDigits(String(form.cost))) : undefined,
       stock: Number(form.stock) || 0,
       minStock: Number(form.minStock) || 3,
       intensidad: Number(form.intensidad),
@@ -110,7 +112,7 @@ export default function AdminPerfumeForm() {
       } else {
         await create(payload);
       }
-      navigate("/admin/perfumes");
+      navigate("/admin/perfumes", { preventScrollReset: false });
     } catch (err: any) {
       setError(err.message || "No se pudo guardar el perfume.");
     } finally {
@@ -182,19 +184,33 @@ export default function AdminPerfumeForm() {
           <h2 className="text-[13px] font-semibold mb-4 text-wine">Precio y stock del frasco</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <Field label="Precio *">
-              <input type="number" min="0" value={form.price} onChange={(e) => set("price", e.target.value)} required className="input" />
+              <MoneyInput value={form.price} onChange={(digits) => set("price", digits)} required placeholder="76.000" />
             </Field>
             <Field label="Precio oferta">
-              <input type="number" min="0" value={form.oldPrice} onChange={(e) => set("oldPrice", e.target.value)} className="input" placeholder="Opcional" />
+              <MoneyInput value={form.oldPrice} onChange={(digits) => set("oldPrice", digits)} placeholder="Opcional" />
             </Field>
             <Field label="Costo">
-              <input type="number" min="0" value={form.cost} onChange={(e) => set("cost", e.target.value)} className="input" placeholder="Interno" />
+              <MoneyInput value={form.cost} onChange={(digits) => set("cost", digits)} placeholder="Interno" />
             </Field>
             <Field label="Stock">
-              <input type="number" min="0" value={form.stock} onChange={(e) => set("stock", e.target.value)} className="input" />
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                value={form.stock}
+                onChange={(e) => set("stock", parseMoneyDigits(e.target.value))}
+                className="input"
+              />
             </Field>
             <Field label="Stock mínimo">
-              <input type="number" min="0" value={form.minStock} onChange={(e) => set("minStock", e.target.value)} className="input" />
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                value={form.minStock}
+                onChange={(e) => set("minStock", parseMoneyDigits(e.target.value))}
+                className="input"
+              />
             </Field>
           </div>
         </section>
@@ -211,24 +227,22 @@ export default function AdminPerfumeForm() {
                   <input value={v.size} disabled className="input bg-[#F7F4EE]" />
                 </Field>
                 <Field label="Precio">
-                  <input
-                    type="number"
-                    min="0"
+                  <MoneyInput
                     value={v.price}
-                    onChange={(e) =>
-                      set("variants", form.variants.map((row: any, i: number) => (i === index ? { ...row, price: e.target.value } : row)))
+                    onChange={(digits) =>
+                      set("variants", form.variants.map((row: any, i: number) => (i === index ? { ...row, price: digits } : row)))
                     }
-                    className="input"
                     placeholder="Sin decant"
                   />
                 </Field>
                 <Field label="Stock">
                   <input
-                    type="number"
-                    min="0"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
                     value={v.stock}
                     onChange={(e) =>
-                      set("variants", form.variants.map((row: any, i: number) => (i === index ? { ...row, stock: e.target.value } : row)))
+                      set("variants", form.variants.map((row: any, i: number) => (i === index ? { ...row, stock: parseMoneyDigits(e.target.value) } : row)))
                     }
                     className="input"
                     placeholder="0"
