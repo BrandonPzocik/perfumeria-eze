@@ -4,7 +4,9 @@ export type Family =
   | "Cítrica"
   | "Oriental"
   | "Acuática"
-  | "Especiada";
+  | "Especiada"
+  | "Afrutado"
+  | "Dulce";
 
 export type Gender = "Femenino" | "Masculino" | "Unisex";
 

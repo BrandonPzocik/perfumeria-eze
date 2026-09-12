@@ -7,6 +7,8 @@ const FAMILY_GRADIENTS: Record<Family, [string, string]> = {
   Oriental: ["#4A3B2F", "#1C1814"],
   Acuática: ["#8A8178", "#3D3229"],
   Especiada: ["#7A5C3E", "#2A241E"],
+  Afrutado: ["#B79358", "#6B4E2E"],
+  Dulce: ["#C4A484", "#7A5A3A"],
 };
 
 interface BottleProps {
