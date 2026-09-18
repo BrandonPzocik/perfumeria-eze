@@ -8,19 +8,19 @@ export interface VariantInput {
   stock?: number;
 }
 
-export function listVariants(perfumeId: string) {
-  return db
+export async function listVariants(perfumeId: string) {
+  return (await db
     .prepare(`SELECT id, size, price, stock, "order" FROM variants WHERE perfume_id = ? ORDER BY "order" ASC`)
-    .all(perfumeId) as { id: string; size: string; price: number; stock: number; order: number }[];
+    .all(perfumeId)) as { id: string; size: string; price: number; stock: number; order: number }[];
 }
 
-export function upsertVariants(perfumeId: string, variants: VariantInput[] | undefined) {
+export async function upsertVariants(perfumeId: string, variants: VariantInput[] | undefined) {
   if (!variants) return;
-  db.prepare(`DELETE FROM variants WHERE perfume_id = ?`).run(perfumeId);
-  variants.forEach((v, index) => {
+  await db.prepare(`DELETE FROM variants WHERE perfume_id = ?`).run(perfumeId);
+  for (const [index, v] of variants.entries()) {
     const size = String(v.size || "").trim();
-    if (!size || !(Number(v.price) > 0)) return;
-    db.prepare(`INSERT INTO variants (id, perfume_id, size, price, stock, "order") VALUES (?, ?, ?, ?, ?, ?)`).run(
+    if (!size || !(Number(v.price) > 0)) continue;
+    await db.prepare(`INSERT INTO variants (id, perfume_id, size, price, stock, "order") VALUES (?, ?, ?, ?, ?, ?)`).run(
       v.id || randomUUID(),
       perfumeId,
       size,
@@ -28,5 +28,5 @@ export function upsertVariants(perfumeId: string, variants: VariantInput[] | und
       Number(v.stock) || 0,
       index
     );
-  });
+  }
 }

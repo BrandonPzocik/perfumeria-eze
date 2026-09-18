@@ -1,12 +1,10 @@
 import { Router } from "express";
 import multer from "multer";
 import * as XLSX from "xlsx";
-import path from "path";
-import fs from "fs";
 import { randomUUID } from "crypto";
 import { db } from "../db";
 import { requireAuth } from "../middleware/requireAuth";
-import { UPLOAD_DIR } from "../paths";
+import { persistImageBuffer } from "../storage/persistImage";
 import { listVariants, upsertVariants } from "../db/variants";
 
 const router = Router();
@@ -159,9 +157,7 @@ async function downloadImage(url: string): Promise<string | null> {
     const contentType = resp.headers.get("content-type") || "";
     const ext = contentType.includes("png") ? ".png" : contentType.includes("webp") ? ".webp" : ".jpg";
     const buffer = Buffer.from(await resp.arrayBuffer());
-    const fileName = `${randomUUID()}${ext}`;
-    fs.writeFileSync(path.join(UPLOAD_DIR, fileName), buffer);
-    return `/uploads/${fileName}`;
+    return persistImageBuffer(buffer, `import${ext}`, contentType);
   } catch {
     return null;
   }
@@ -202,7 +198,7 @@ router.post("/commit", requireAuth, async (req, res) => {
       imageUrl = await downloadImage(String(mapped.imageUrl));
     }
 
-    const existing = db.prepare(`SELECT id FROM perfumes WHERE id = ?`).get(id);
+    const existing = await db.prepare(`SELECT id FROM perfumes WHERE id = ?`).get(id);
 
     const fields = {
       internal_code: mapped.internalCode || null,
@@ -233,7 +229,7 @@ router.post("/commit", requireAuth, async (req, res) => {
 
     try {
       if (existing) {
-        db.prepare(
+        await db.prepare(
           `UPDATE perfumes SET internal_code=?, name=?, brand=?, gender=?, family=?, type=?, size=?, description=?,
             price=?, old_price=?, cost=?, stock=?, min_stock=?, notes_salida=?, notes_corazon=?, notes_fondo=?,
             intensidad=?, duracion=?, visible=?, destacado=?, oferta=?, nuevo=?, mas_vendido=?, kind=?, updated_at=datetime('now')
@@ -247,7 +243,7 @@ router.post("/commit", requireAuth, async (req, res) => {
         );
         updated++;
       } else {
-        db.prepare(
+        await db.prepare(
           `INSERT INTO perfumes (id, internal_code, name, brand, gender, family, type, size, description,
             price, old_price, cost, stock, min_stock, notes_salida, notes_corazon, notes_fondo,
             intensidad, duracion, visible, destacado, oferta, nuevo, mas_vendido, kind)
@@ -262,18 +258,18 @@ router.post("/commit", requireAuth, async (req, res) => {
         created++;
       }
 
-      if (variants.length) upsertVariants(id, variants);
+      if (variants.length) await upsertVariants(id, variants);
 
       if (imageUrl) {
-        db.prepare(`DELETE FROM images WHERE perfume_id = ?`).run(id);
-        db.prepare(`INSERT INTO images (id, perfume_id, url, "order", is_main) VALUES (?, ?, ?, 0, 1)`).run(randomUUID(), id, imageUrl);
+        await db.prepare(`DELETE FROM images WHERE perfume_id = ?`).run(id);
+        await db.prepare(`INSERT INTO images (id, perfume_id, url, "order", is_main) VALUES (?, ?, ?, 0, 1)`).run(randomUUID(), id, imageUrl);
       }
     } catch (err: any) {
       errors.push(`Fila ${i + 2} (${id}): ${err.message}`);
     }
   }
 
-  db.prepare(
+  await db.prepare(
     `INSERT INTO import_batches (id, file_name, created_count, updated_count, error_count, errors) VALUES (?,?,?,?,?,?)`
   ).run(randomUUID(), fileName || "importacion.xlsx", created, updated, errors.length, JSON.stringify(errors));
 
@@ -281,8 +277,8 @@ router.post("/commit", requireAuth, async (req, res) => {
 });
 
 // GET /api/import/history
-router.get("/history", requireAuth, (_req, res) => {
-  const rows = db.prepare(`SELECT * FROM import_batches ORDER BY created_at DESC LIMIT 30`).all() as any[];
+router.get("/history", requireAuth, async (_req, res) => {
+  const rows = (await db.prepare(`SELECT * FROM import_batches ORDER BY created_at DESC LIMIT 30`).all()) as any[];
   res.json(
     rows.map((r) => ({
       id: r.id,
@@ -296,43 +292,44 @@ router.get("/history", requireAuth, (_req, res) => {
 });
 
 // GET /api/import/export -> exporta todo el catálogo a XLSX
-router.get("/export", requireAuth, (_req, res) => {
-  const rows = db.prepare(`SELECT * FROM perfumes ORDER BY created_at DESC`).all() as any[];
-  const data = rows.map((r) => {
-    const variants = listVariants(r.id);
+router.get("/export", requireAuth, async (_req, res) => {
+  const rows = (await db.prepare(`SELECT * FROM perfumes ORDER BY created_at DESC`).all()) as any[];
+  const data: Record<string, unknown>[] = [];
+  for (const r of rows) {
+    const variants = await listVariants(r.id);
     const bySize = (size: string) => variants.find((v) => v.size === size);
-    return {
-    SKU: r.id,
-    "Código interno": r.internal_code || "",
-    Nombre: r.name,
-    Marca: r.brand,
-    Género: r.gender,
-    "Familia olfativa": r.family,
-    Tipo: r.type,
-    Tamaño: r.size,
-    Precio: r.price,
-    "Precio 2ml": bySize("2ml")?.price || "",
-    "Precio 5ml": bySize("5ml")?.price || "",
-    "Precio 10ml": bySize("10ml")?.price || "",
-    "Stock 2ml": bySize("2ml")?.stock ?? "",
-    "Stock 5ml": bySize("5ml")?.stock ?? "",
-    "Stock 10ml": bySize("10ml")?.stock ?? "",
-    "Precio oferta": r.old_price || "",
-    Costo: r.cost || "",
-    Stock: r.stock,
-    "Stock mínimo": r.min_stock,
-    "Notas salida": JSON.parse(r.notes_salida || "[]").join(", "),
-    "Notas corazón": JSON.parse(r.notes_corazon || "[]").join(", "),
-    "Notas fondo": JSON.parse(r.notes_fondo || "[]").join(", "),
-    Intensidad: r.intensidad,
-    Duración: r.duracion,
-    Visible: r.visible ? "si" : "no",
-    Destacado: r.destacado ? "si" : "no",
-    Oferta: r.oferta ? "si" : "no",
-    Nuevo: r.nuevo ? "si" : "no",
-    "Más vendido": r.mas_vendido ? "si" : "no",
-  };
-  });
+    data.push({
+      SKU: r.id,
+      "Código interno": r.internal_code || "",
+      Nombre: r.name,
+      Marca: r.brand,
+      Género: r.gender,
+      "Familia olfativa": r.family,
+      Tipo: r.type,
+      Tamaño: r.size,
+      Precio: r.price,
+      "Precio 2ml": bySize("2ml")?.price || "",
+      "Precio 5ml": bySize("5ml")?.price || "",
+      "Precio 10ml": bySize("10ml")?.price || "",
+      "Stock 2ml": bySize("2ml")?.stock ?? "",
+      "Stock 5ml": bySize("5ml")?.stock ?? "",
+      "Stock 10ml": bySize("10ml")?.stock ?? "",
+      "Precio oferta": r.old_price || "",
+      Costo: r.cost || "",
+      Stock: r.stock,
+      "Stock mínimo": r.min_stock,
+      "Notas salida": JSON.parse(r.notes_salida || "[]").join(", "),
+      "Notas corazón": JSON.parse(r.notes_corazon || "[]").join(", "),
+      "Notas fondo": JSON.parse(r.notes_fondo || "[]").join(", "),
+      Intensidad: r.intensidad,
+      Duración: r.duracion,
+      Visible: r.visible ? "si" : "no",
+      Destacado: r.destacado ? "si" : "no",
+      Oferta: r.oferta ? "si" : "no",
+      Nuevo: r.nuevo ? "si" : "no",
+      "Más vendido": r.mas_vendido ? "si" : "no",
+    });
+  }
 
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(data);

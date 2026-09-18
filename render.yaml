@@ -1,11 +1,10 @@
-# Blueprint de Render: un solo Web Service (front + API) + disco para SQLite y fotos.
-# El plan pago más chico es obligatorio: el plan Free no admite disco persistente
-# y se apaga con la inactividad (perderías la base y las imágenes).
+# API en Render Free. Las fotos van a Cloudinary y la base a Turso
+# (no hace falta disco persistente).
 services:
   - type: web
     name: perfumeria-arabe
     runtime: node
-    plan: 0.5c-512mb
+    plan: free
     buildCommand: npm run install:all && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
@@ -14,10 +13,6 @@ services:
         value: 20.20.2
       - key: NODE_ENV
         value: production
-      - key: DATABASE_FILE
-        value: /data/data.db
-      - key: UPLOAD_DIR
-        value: /data/uploads
       - key: JWT_EXPIRES_IN
         value: 7d
       - key: JWT_SECRET
@@ -26,7 +21,17 @@ services:
         sync: false
       - key: ADMIN_PASSWORD
         sync: false
-    disk:
-      name: catalog-data
-      mountPath: /data
-      sizeGB: 1
+      - key: TURSO_DATABASE_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: CLOUDINARY_FOLDER
+        value: perfumeria
+      - key: CORS_ORIGIN
+        sync: false

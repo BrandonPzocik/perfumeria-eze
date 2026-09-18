@@ -7,7 +7,7 @@ import { clearLoginFailures, loginRateLimit, recordLoginFailure } from "../middl
 const router = Router();
 const DUMMY_HASH = hashPassword("invalid-login-placeholder");
 
-router.post("/login", loginRateLimit, (req, res) => {
+router.post("/login", loginRateLimit, async (req, res) => {
   const email = String(req.body?.email || "").trim().toLowerCase();
   const password = String(req.body?.password || "");
 
@@ -19,7 +19,7 @@ router.post("/login", loginRateLimit, (req, res) => {
     return res.status(401).json({ error: "Email o contraseña incorrectos." });
   }
 
-  const user = db.prepare("SELECT * FROM admin_users WHERE email = ?").get(email) as any;
+  const user = (await db.prepare("SELECT * FROM admin_users WHERE email = ?").get(email)) as any;
   const hash = user?.password_hash || DUMMY_HASH;
   const valid = comparePassword(password, hash);
 

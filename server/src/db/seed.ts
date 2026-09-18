@@ -18,16 +18,16 @@ const SAMPLE_PERFUMES = [
   { id: "SKU-012", name: "Rose Nocturne", brand: "Marbella Parfums", gender: "Femenino", family: "Especiada", type: "Parfum", size: "75ml", price: 176000, stock: 20, tags: { masVendido: 1, destacado: 1 }, notas: { salida: ["Pimienta rosa"], corazon: ["Rosa de Damasco", "Clavo"], fondo: ["Pachulí", "Ámbar"] }, intensidad: 5, duracion: "10-12h" },
 ];
 
-export function seed() {
+export async function seed() {
   const isProd = process.env.NODE_ENV === "production";
-  const adminCount = (db.prepare(`SELECT COUNT(*) as c FROM admin_users`).get() as any).c;
+  const adminCount = Number(((await db.prepare(`SELECT COUNT(*) as c FROM admin_users`).get()) as any)?.c || 0);
   if (adminCount === 0) {
     const email = (process.env.ADMIN_EMAIL || (isProd ? "" : "admin@maisonambar.com")).toLowerCase();
     const password = process.env.ADMIN_PASSWORD || (isProd ? "" : "admin1234");
     if (!email || !password) {
       throw new Error("Definí ADMIN_EMAIL y ADMIN_PASSWORD en las variables de entorno antes del primer arranque.");
     }
-    db.prepare(`INSERT INTO admin_users (id, email, password_hash, name) VALUES (?,?,?,?)`).run(
+    await db.prepare(`INSERT INTO admin_users (id, email, password_hash, name) VALUES (?,?,?,?)`).run(
       randomUUID(),
       email,
       hashPassword(password),
@@ -36,7 +36,7 @@ export function seed() {
     console.log(`✔ Usuario admin creado -> ${email}`);
   }
 
-  const perfumeCount = (db.prepare(`SELECT COUNT(*) as c FROM perfumes`).get() as any).c;
+  const perfumeCount = Number(((await db.prepare(`SELECT COUNT(*) as c FROM perfumes`).get()) as any)?.c || 0);
   if (perfumeCount === 0 && !isProd) {
     const insert = db.prepare(
       `INSERT INTO perfumes (
@@ -46,7 +46,7 @@ export function seed() {
       ) VALUES (?,?,?,?,?,?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?)`
     );
     for (const p of SAMPLE_PERFUMES) {
-      insert.run(
+      await insert.run(
         p.id, p.name, p.brand, p.gender, p.family, p.type, p.size, p.price, (p as any).oldPrice || null, p.stock,
         JSON.stringify(p.notas.salida), JSON.stringify(p.notas.corazon), JSON.stringify(p.notas.fondo), p.intensidad, p.duracion,
         1, (p.tags as any).destacado || 0, (p.tags as any).oferta || 0, (p.tags as any).nuevo || 0, (p.tags as any).masVendido || 0
@@ -55,5 +55,5 @@ export function seed() {
     console.log(`✔ Catálogo de ejemplo cargado (${SAMPLE_PERFUMES.length} perfumes)`);
   }
 
-  seedDecants();
+  await seedDecants();
 }

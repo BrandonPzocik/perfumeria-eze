@@ -56,58 +56,53 @@ function namesMatch(a: string, b: string) {
   return longer.includes(shorter);
 }
 
-function attachDecants(perfumeId: string, prices: { "2ml": number; "5ml": number; "10ml": number }) {
-  upsertVariants(perfumeId, [
+async function attachDecants(perfumeId: string, prices: { "2ml": number; "5ml": number; "10ml": number }) {
+  await upsertVariants(perfumeId, [
     { id: randomUUID(), size: "2ml", price: prices["2ml"], stock: 20 },
     { id: randomUUID(), size: "5ml", price: prices["5ml"], stock: 20 },
     { id: randomUUID(), size: "10ml", price: prices["10ml"], stock: 20 },
   ]);
 }
 
-function mergeStandaloneDecants() {
-  const decants = db.prepare(`SELECT id, name FROM perfumes WHERE kind = 'decant'`).all() as { id: string; name: string }[];
+async function mergeStandaloneDecants() {
+  const decants = (await db.prepare(`SELECT id, name FROM perfumes WHERE kind = 'decant'`).all()) as { id: string; name: string }[];
   if (decants.length === 0) return 0;
 
-  const bottles = db.prepare(`SELECT id, name FROM perfumes WHERE kind != 'decant'`).all() as { id: string; name: string }[];
+  const bottles = (await db.prepare(`SELECT id, name FROM perfumes WHERE kind != 'decant'`).all()) as { id: string; name: string }[];
   let merged = 0;
 
-  const tx = db.transaction(() => {
-    for (const d of decants) {
-      const match = bottles.find((b) => namesMatch(b.name, d.name));
-      const variants = listVariants(d.id);
-      if (match && variants.length && listVariants(match.id).length === 0) {
-        upsertVariants(
-          match.id,
-          variants.map((v) => ({ size: v.size, price: v.price, stock: v.stock }))
-        );
-        merged += 1;
-      }
-      db.prepare(`DELETE FROM perfumes WHERE id = ?`).run(d.id);
+  for (const d of decants) {
+    const match = bottles.find((b) => namesMatch(b.name, d.name));
+    const variants = await listVariants(d.id);
+    if (match && variants.length && (await listVariants(match.id)).length === 0) {
+      await upsertVariants(
+        match.id,
+        variants.map((v) => ({ size: v.size, price: v.price, stock: v.stock }))
+      );
+      merged += 1;
     }
-  });
-  tx();
+    await db.prepare(`DELETE FROM perfumes WHERE id = ?`).run(d.id);
+  }
   return merged;
 }
 
-function removeLeftoverDecantSkus() {
-  const leftovers = db.prepare(`SELECT id FROM perfumes WHERE id LIKE 'DEC-%'`).all() as { id: string }[];
+async function removeLeftoverDecantSkus() {
+  const leftovers = (await db.prepare(`SELECT id FROM perfumes WHERE id LIKE 'DEC-%'`).all()) as { id: string }[];
   if (leftovers.length === 0) return 0;
-  const del = db.prepare(`DELETE FROM perfumes WHERE id = ?`);
-  const tx = db.transaction(() => {
-    for (const row of leftovers) del.run(row.id);
-  });
-  tx();
+  for (const row of leftovers) {
+    await db.prepare(`DELETE FROM perfumes WHERE id = ?`).run(row.id);
+  }
   return leftovers.length;
 }
 
-export function seedDecants() {
+export async function seedDecants() {
   const hadStandalone =
-    (db.prepare(`SELECT COUNT(*) as c FROM perfumes WHERE kind = 'decant'`).get() as { c: number }).c > 0 ||
-    (db.prepare(`SELECT COUNT(*) as c FROM perfumes WHERE id LIKE 'DEC-%'`).get() as { c: number }).c > 0;
-  const variantCount = (db.prepare(`SELECT COUNT(*) as c FROM variants`).get() as { c: number }).c;
+    Number(((await db.prepare(`SELECT COUNT(*) as c FROM perfumes WHERE kind = 'decant'`).get()) as { c: number })?.c || 0) > 0 ||
+    Number(((await db.prepare(`SELECT COUNT(*) as c FROM perfumes WHERE id LIKE 'DEC-%'`).get()) as { c: number })?.c || 0) > 0;
+  const variantCount = Number(((await db.prepare(`SELECT COUNT(*) as c FROM variants`).get()) as { c: number })?.c || 0);
 
-  const merged = mergeStandaloneDecants();
-  const removed = removeLeftoverDecantSkus();
+  const merged = await mergeStandaloneDecants();
+  const removed = await removeLeftoverDecantSkus();
   if (merged > 0) {
     console.log(`✔ Decants unificados en la ficha del perfume (${merged} fichas)`);
   }
@@ -115,22 +110,19 @@ export function seedDecants() {
     console.log(`✔ Fichas sueltas de decant eliminadas (${removed})`);
   }
 
-  db.prepare(`UPDATE perfumes SET kind = 'bottle' WHERE kind != 'bottle'`).run();
+  await db.prepare(`UPDATE perfumes SET kind = 'bottle' WHERE kind != 'bottle'`).run();
 
   if (!hadStandalone && variantCount > 0) return;
 
-  const bottles = db.prepare(`SELECT id, name FROM perfumes`).all() as { id: string; name: string }[];
+  const bottles = (await db.prepare(`SELECT id, name FROM perfumes`).all()) as { id: string; name: string }[];
   let attached = 0;
-  const tx = db.transaction(() => {
-    for (const p of DECANT_CATALOG) {
-      const match = bottles.find((b) => namesMatch(b.name, p.name));
-      if (!match) continue;
-      if (listVariants(match.id).length > 0) continue;
-      attachDecants(match.id, p.prices);
-      attached += 1;
-    }
-  });
-  tx();
+  for (const p of DECANT_CATALOG) {
+    const match = bottles.find((b) => namesMatch(b.name, p.name));
+    if (!match) continue;
+    if ((await listVariants(match.id)).length > 0) continue;
+    await attachDecants(match.id, p.prices);
+    attached += 1;
+  }
   if (attached > 0) {
     console.log(`✔ Precios de decant cargados en ${attached} perfumes`);
   }

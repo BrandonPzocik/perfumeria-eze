@@ -4,9 +4,10 @@ Proyecto completo y funcional: catálogo de perfumes con pedidos por WhatsApp
 (sin registro) + panel de administrador (con login) para cargar y gestionar
 todo el catálogo, incluida importación masiva desde Excel.
 
-**100% local para desarrollar** (sin Docker). En producción se despliega
-en **un solo servicio de Render**: el mismo Node sirve el catálogo, el panel
-y la API; SQLite y las fotos van en un disco persistente.
+**100% local para desarrollar** (sin Docker). En producción el **front** va a
+**Vercel** (gratis, 24/7) y la **API** a **Render Free**. Las fotos viven en
+**Cloudinary** y el catálogo en **Turso** (SQLite en la nube). Nada de eso
+borra `server/data.db` ni `server/uploads` de tu Mac.
 
 ---
 
@@ -99,9 +100,9 @@ cd web && npm run dev
 
 ### Backend (`server/`)
 - API REST (Express + TypeScript) con autenticación JWT para el panel.
-- Base de datos SQLite con `better-sqlite3` — funciona en Node 20, sin Docker ni
-  motor de base de datos aparte.
-- Subida de imágenes (perfumes, logo) guardadas en `server/uploads`.
+- Base de datos SQLite local al desarrollar; en producción **Turso** (SQLite en la nube).
+- Subida de imágenes: en local a `server/uploads`; en producción a **Cloudinary**.
+  Las fotos de la Mac no se borran al migrar.
 - Importación de Excel/CSV con descarga automática de imágenes por URL.
 
 ---
@@ -135,8 +136,8 @@ borrá `server/data.db` y volvé a arrancar.
 VITE_API_URL=http://localhost:3001/api
 ```
 
-En desarrollo local usá `http://localhost:3001/api`. En Render no hace falta
-tocar esta variable: el build de producción ya apunta a `/api` (mismo dominio).
+En desarrollo local usá `http://localhost:3001/api`. En Vercel definí
+`VITE_API_URL` con la URL de la API en Render (ver más abajo).
 
 ---
 
@@ -159,32 +160,78 @@ La primera vez instala `cloudflared` con Homebrew si hace falta. Compila el siti
 
 ---
 
-## 🌐 Desplegar en Render (front + servidor juntos)
+## 🌐 Publicar gratis (Vercel + Render Free + Cloudinary + Turso)
 
-Sí: **el catálogo y el servidor van en el mismo servicio de Render**.
-Queda una sola URL (por ejemplo `https://perfumeria-arabe.onrender.com`)
-que sirve el sitio, el panel `/admin` y la API. Las fotos y la base SQLite
-viven en un **disco persistente** para que no se borren en cada deploy.
+El sitio público queda en Vercel (siempre prendido). La API en Render Free
+(se duerme a los ~15 min sin tráfico: la primera visita puede tardar 30–60 s).
+**Las fotos y el catálogo no se pierden** porque no viven en el disco de Render.
 
-Hace falta el plan pago más chico (**Starter / 0.5 CPU · 512 MB**, ~USD 7/mes).
-El plan Free no admite disco y se apaga solo: perderías el catálogo y las imágenes.
+En tu Mac **no se borra nada**: `server/data.db` y `server/uploads` quedan
+como copia de seguridad. Los scripts solo **copian**.
 
-### 1. Subí estos cambios a GitHub
+Hacé los pasos en este orden.
 
-Render despliega desde el repo (`BrandonPzocik/perfumeria-eze`). Commit y push
-de `main` con los archivos nuevos (`render.yaml`, etc.).
+### Paso 1 — Cloudinary (fotos, plan free)
 
-### 2. Creá el servicio con el Blueprint (recomendado)
+1. Creá cuenta en [cloudinary.com](https://cloudinary.com) (el plan Free alcanza).
+2. Entrá a **Dashboard** y copiá:
+   - Cloud name
+   - API Key
+   - API Secret
+3. En `server/.env` agregá (no las subas a GitHub):
 
-1. Entrá a [dashboard.render.com](https://dashboard.render.com) y conectá GitHub.
-2. **New → Blueprint**.
-3. Elegí el repo `perfumeria-eze` y la rama `main`.
-4. Render lee `render.yaml` y te pide **solo** estas dos cosas (son el login del panel):
-   - `ADMIN_EMAIL` — el mail con el que vas a entrar a `/admin`
-   - `ADMIN_PASSWORD` — una contraseña fuerte, no `admin1234`
-5. Confirmá el create. `JWT_SECRET` se genera solo.
+```env
+CLOUDINARY_CLOUD_NAME="tu-cloud-name"
+CLOUDINARY_API_KEY="tu-api-key"
+CLOUDINARY_API_SECRET="tu-api-secret"
+CLOUDINARY_FOLDER="perfumeria"
+```
 
-Si preferís crearlo a mano: **New → Web Service** → el mismo repo →:
+4. En la raíz del proyecto, con Node 20:
+
+```bash
+npm run migrate:images
+```
+
+Eso sube las fotos de `server/uploads` a Cloudinary y actualiza las URLs
+**en tu `data.db` local**. Los archivos de `uploads` **no se borran**.
+Si una foto ya era `https://…`, la saltea.
+
+### Paso 2 — Turso (base de datos, plan free)
+
+1. Creá cuenta en [turso.tech](https://turso.tech) y una base (por ejemplo `perfumeria`).
+2. Copiá la URL (`libsql://…`) y un token de autenticación.
+3. En `server/.env` agregá **solo para este paso**:
+
+```env
+TURSO_DATABASE_URL="libsql://...."
+TURSO_AUTH_TOKEN="...."
+```
+
+4. En la raíz:
+
+```bash
+npm run migrate:turso
+```
+
+Copia el catálogo local a Turso. Si Turso ya tiene perfumes, no pisa nada
+salvo que corras `FORCE_TURSO_MIGRATE=1 npm run migrate:turso`.
+
+5. **Importante:** comentá o borrá `TURSO_DATABASE_URL` y `TURSO_AUTH_TOKEN`
+de `server/.env` para que `npm run dev` siga usando tu `data.db` de la Mac.
+Dejá las de Cloudinary si querés que las fotos nuevas (desde el admin local)
+también se suban a la nube.
+
+### Paso 3 — Subí el código a GitHub
+
+Commit y push de `main` al repo (`BrandonPzocik/perfumeria-eze`).
+Nunca subas `.env`, `data.db` ni `uploads/`.
+
+### Paso 4 — API en Render (plan Free)
+
+1. [dashboard.render.com](https://dashboard.render.com) → conectá GitHub.
+2. **New → Blueprint**, repo `perfumeria-eze`, rama `main`.
+   O a mano: **New → Web Service**, mismo repo.
 
 | Campo | Valor |
 | --- | --- |
@@ -192,58 +239,79 @@ Si preferís crearlo a mano: **New → Web Service** → el mismo repo →:
 | Branch | `main` |
 | Build command | `npm run install:all && npm run build` |
 | Start command | `npm start` |
-| Instance type | `0.5 CPU / 512 MB` (Starter), **no Free** |
+| Instance type | **Free** |
 | Health check path | `/api/health` |
 
-En **Advanced → Disk**: mount path `/data`, tamaño **1 GB**.
-
-Variables de entorno:
+**No agregues disco.** Completá estas variables:
 
 ```
 NODE_VERSION=20.20.2
 NODE_ENV=production
-DATABASE_FILE=/data/data.db
-UPLOAD_DIR=/data/uploads
-JWT_SECRET=<generá una clave larga y aleatoria>
+JWT_SECRET=<clave larga y aleatoria>
 JWT_EXPIRES_IN=7d
 ADMIN_EMAIL=tu@email.com
-ADMIN_PASSWORD=<tu contraseña de admin>
+ADMIN_PASSWORD=<contraseña fuerte>
+TURSO_DATABASE_URL=libsql://....
+TURSO_AUTH_TOKEN=....
+CLOUDINARY_CLOUD_NAME=....
+CLOUDINARY_API_KEY=....
+CLOUDINARY_API_SECRET=....
+CLOUDINARY_FOLDER=perfumeria
+CORS_ORIGIN=https://TU-SITIO.vercel.app
 ```
 
-No hace falta `VITE_API_URL`: el build de producción ya usa `/api` (mismo dominio).
+`CORS_ORIGIN` lo completás en el paso 5, cuando Vercel te dé la URL
+(podés poner un placeholder y editarlo después).
 
-### 3. Esperá el primer deploy y abrí el sitio
+Cuando esté **Live**, probá `https://<tu-servicio>.onrender.com/api/health`.
+Debería decir `"database":"turso"` y `"images":"cloudinary"`.
 
-Cuando el deploy esté **Live**:
+La URL de Render también sirve el sitio, pero el front “oficial” va a ser Vercel.
 
-- Catálogo: `https://<tu-servicio>.onrender.com`
-- Panel: `https://<tu-servicio>.onrender.com/admin/login`
+### Paso 5 — Front en Vercel (gratis)
 
-La primera vez la base arranca **vacía** (sin los 12 perfumes de ejemplo).
-Entrá al panel y cargá el catálogo, el WhatsApp, el logo y las fotos.
+1. Entrá a [vercel.com](https://vercel.com) e importá el mismo repo.
+2. **Root Directory:** `web`
+3. Framework: Vite. Build: `npm run build`. Output: `dist`.
+4. Environment variable (Production):
 
-`ADMIN_EMAIL` / `ADMIN_PASSWORD` **solo se usan si la base está vacía**.
-Si el primer deploy falló después de crear el admin, no se vuelven a leer:
-cambiá la contraseña desde un backup o borrá el archivo en el disco.
+```
+VITE_API_URL=https://<tu-servicio>.onrender.com/api
+```
 
-### 4. Dominio propio (opcional)
+5. Deploy. Queda una URL tipo `https://perfumeria-eze.vercel.app`.
+6. Volvé a Render → Environment → `CORS_ORIGIN` = esa URL de Vercel
+   (sin barra final) → Save → que redeploye la API.
+7. Catálogo: la URL de Vercel. Panel: `https://….vercel.app/admin/login`.
 
-En el servicio → **Settings → Custom domains** → agregá `www.tutienda.com`
-y cargá el CNAME que te muestra Render en tu DNS.
+Si más adelante querés el front también en Render y no en Vercel, no hace falta
+`VITE_API_URL` extra: el build usa `/api` en el mismo dominio. Igual las fotos
+y la base siguen en Cloudinary y Turso.
 
-### 5. Backups
+### Paso 6 — Comprobar que no se perdió nada
 
-Todo lo importante está en el disco `/data` (`data.db` + `uploads/`).
-En el servicio → **Disks** podés tomar un snapshot de vez en cuando.
-Si actualizás el catálogo seguido, un backup semanal alcanza.
+1. Abrí el catálogo en Vercel: tienen que verse las mismas fotos (URLs de Cloudinary).
+2. Entrá al panel y editá un perfume: la foto nueva tiene que ir a Cloudinary.
+3. En tu Mac, `server/uploads` y `server/data.db` **siguen ahí**.
+
+### Dominio propio (opcional)
+
+En Vercel → Project → Settings → Domains. HTTPS lo da Vercel.
+
+### Backups
+
+- Fotos: Cloudinary + la carpeta `server/uploads` de la Mac.
+- Catálogo: Turso + `server/data.db` de la Mac.
+
+No borres esas copias locales.
 
 ---
 
 ## 🔒 Seguridad en producción
 
 1. Usá una contraseña de admin propia (la de prueba `admin1234` no se crea en Render).
-2. Render ya da HTTPS. No expongas `data.db` ni `uploads` en el repo (ya están en `.gitignore`).
-3. El disco no está disponible en el plan Free: no lo bajes de plan o perdés los datos.
+2. Render y Vercel ya dan HTTPS. No expongas `data.db`, `uploads` ni `.env` en el repo.
+3. No borres `server/data.db` ni `server/uploads` de la Mac: son el backup.
 
 ---
 

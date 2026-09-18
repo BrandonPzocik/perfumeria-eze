@@ -1,15 +1,8 @@
-import Database from "better-sqlite3";
-import { DB_PATH, ensureDirs } from "../paths";
+import { db } from "./client";
 
-ensureDirs();
+export { db, initDb, usesTurso } from "./client";
 
-export const db = new Database(DB_PATH);
-
-db.exec("PRAGMA journal_mode = WAL;");
-db.exec("PRAGMA foreign_keys = ON;");
-
-export function migrate() {
-  db.exec(`
+const SCHEMA = `
     CREATE TABLE IF NOT EXISTS admin_users (
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
@@ -66,6 +59,14 @@ export function migrate() {
       "order" INTEGER NOT NULL DEFAULT 0
     );
 
+    CREATE TABLE IF NOT EXISTS images (
+      id TEXT PRIMARY KEY,
+      perfume_id TEXT NOT NULL REFERENCES perfumes(id) ON DELETE CASCADE,
+      url TEXT NOT NULL,
+      "order" INTEGER NOT NULL DEFAULT 0,
+      is_main INTEGER NOT NULL DEFAULT 0
+    );
+
     CREATE TABLE IF NOT EXISTS settings (
       id INTEGER PRIMARY KEY CHECK (id = 1),
       whatsapp_number TEXT NOT NULL DEFAULT '5491100000000',
@@ -96,41 +97,44 @@ export function migrate() {
       errors TEXT NOT NULL DEFAULT '[]',
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
-  `);
+`;
 
-  const settingsRow = db.prepare("SELECT id FROM settings WHERE id = 1").get();
+export async function migrate() {
+  await db.exec(SCHEMA);
+
+  const settingsRow = await db.prepare("SELECT id FROM settings WHERE id = 1").get();
   if (!settingsRow) {
-    db.prepare("INSERT INTO settings (id) VALUES (1)").run();
+    await db.prepare("INSERT INTO settings (id) VALUES (1)").run();
   }
 
-  const columns = db.prepare(`PRAGMA table_info(settings)`).all() as { name: string }[];
+  const columns = (await db.prepare(`PRAGMA table_info(settings)`).all()) as { name: string }[];
   const colNames = new Set(columns.map((c) => c.name));
   if (!colNames.has("whatsapp_number_femenino")) {
-    db.exec(`ALTER TABLE settings ADD COLUMN whatsapp_number_femenino TEXT NOT NULL DEFAULT ''`);
+    await db.exec(`ALTER TABLE settings ADD COLUMN whatsapp_number_femenino TEXT NOT NULL DEFAULT ''`);
   }
   if (!colNames.has("whatsapp_number_masculino")) {
-    db.exec(`ALTER TABLE settings ADD COLUMN whatsapp_number_masculino TEXT NOT NULL DEFAULT ''`);
+    await db.exec(`ALTER TABLE settings ADD COLUMN whatsapp_number_masculino TEXT NOT NULL DEFAULT ''`);
   }
   if (!colNames.has("instagram_url_femenino")) {
-    db.exec(`ALTER TABLE settings ADD COLUMN instagram_url_femenino TEXT NOT NULL DEFAULT ''`);
+    await db.exec(`ALTER TABLE settings ADD COLUMN instagram_url_femenino TEXT NOT NULL DEFAULT ''`);
   }
 
-  const instagramFemenino = db.prepare(`SELECT instagram_url_femenino FROM settings WHERE id = 1`).get() as
+  const instagramFemenino = (await db.prepare(`SELECT instagram_url_femenino FROM settings WHERE id = 1`).get()) as
     | { instagram_url_femenino?: string }
     | undefined;
   if (!String(instagramFemenino?.instagram_url_femenino || "").trim()) {
-    db.prepare(`UPDATE settings SET instagram_url_femenino = ? WHERE id = 1`).run("https://www.instagram.com/noura.scents/");
+    await db.prepare(`UPDATE settings SET instagram_url_femenino = ? WHERE id = 1`).run("https://www.instagram.com/noura.scents/");
   }
 
-  const perfumeCols = db.prepare(`PRAGMA table_info(perfumes)`).all() as { name: string }[];
+  const perfumeCols = (await db.prepare(`PRAGMA table_info(perfumes)`).all()) as { name: string }[];
   const perfumeColNames = new Set(perfumeCols.map((c) => c.name));
   if (!perfumeColNames.has("kind")) {
-    db.exec(`ALTER TABLE perfumes ADD COLUMN kind TEXT NOT NULL DEFAULT 'bottle'`);
+    await db.exec(`ALTER TABLE perfumes ADD COLUMN kind TEXT NOT NULL DEFAULT 'bottle'`);
   }
 
-  const colors = db.prepare(`SELECT primary_color FROM settings WHERE id = 1`).get() as { primary_color?: string } | undefined;
+  const colors = (await db.prepare(`SELECT primary_color FROM settings WHERE id = 1`).get()) as { primary_color?: string } | undefined;
   const current = String(colors?.primary_color || "").toLowerCase();
   if (current === "#1e40af" || current === "#6e1e39") {
-    db.prepare(`UPDATE settings SET primary_color = '#3D3229', accent_color = '#A68B5B' WHERE id = 1`).run();
+    await db.prepare(`UPDATE settings SET primary_color = '#3D3229', accent_color = '#A68B5B' WHERE id = 1`).run();
   }
 }

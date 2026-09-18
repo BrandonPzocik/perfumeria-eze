@@ -7,12 +7,16 @@
     "preinstall": "node ../scripts/check-node.cjs",
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "migrate:images": "tsx src/scripts/migrate-images.ts",
+    "migrate:turso": "tsx src/scripts/migrate-turso.ts"
   },
   "license": "ISC",
   "dependencies": {
+    "@libsql/client": "^0.15.15",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^11.10.0",
+    "cloudinary": "^2.7.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",

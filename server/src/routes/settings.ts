@@ -5,14 +5,14 @@ import { requireAuth } from "../middleware/requireAuth";
 
 const router = Router();
 
-router.get("/", (_req, res) => {
-  const row = db.prepare(`SELECT * FROM settings WHERE id = 1`).get();
+router.get("/", async (_req, res) => {
+  const row = await db.prepare(`SELECT * FROM settings WHERE id = 1`).get();
   res.json(rowToSettings(row));
 });
 
-router.patch("/", requireAuth, (req, res) => {
+router.patch("/", requireAuth, async (req, res) => {
   const b = req.body || {};
-  const existing = db.prepare(`SELECT * FROM settings WHERE id = 1`).get() as any;
+  const existing = (await db.prepare(`SELECT * FROM settings WHERE id = 1`).get()) as any;
 
   const merged = {
     whatsapp_number: b.whatsappNumber ?? existing.whatsapp_number,
@@ -34,7 +34,7 @@ router.patch("/", requireAuth, (req, res) => {
     dark_mode_default: b.darkModeDefault !== undefined ? (b.darkModeDefault ? 1 : 0) : existing.dark_mode_default,
   };
 
-  db.prepare(
+  await db.prepare(
     `UPDATE settings SET
       whatsapp_number=?, whatsapp_number_femenino=?, whatsapp_number_masculino=?, whatsapp_message=?,
       store_name=?, store_name_accent=?,
@@ -48,7 +48,7 @@ router.patch("/", requireAuth, (req, res) => {
     merged.instagram_url, merged.instagram_url_femenino, merged.facebook_url, merged.schedule, merged.currency, merged.show_currency, merged.dark_mode_default
   );
 
-  const row = db.prepare(`SELECT * FROM settings WHERE id = 1`).get();
+  const row = await db.prepare(`SELECT * FROM settings WHERE id = 1`).get();
   res.json(rowToSettings(row));
 });
 

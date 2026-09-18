@@ -13,23 +13,25 @@ const toAdminPerfume = (row: any) => rowToPerfume(row, { privateFields: true });
 /* ------------------------------------------------------------------ */
 
 // GET /api/perfumes  -> catálogo público (solo visibles)
-router.get("/", (req, res) => {
-  const rows = db.prepare(`SELECT * FROM perfumes WHERE visible = 1 ORDER BY created_at DESC`).all() as any[];
-  res.json(rows.map((row) => rowToPerfume(row)));
+router.get("/", async (_req, res) => {
+  const rows = (await db.prepare(`SELECT * FROM perfumes WHERE visible = 1 ORDER BY created_at DESC`).all()) as any[];
+  const perfumes: any[] = [];
+  for (const row of rows) perfumes.push(await rowToPerfume(row));
+  res.json(perfumes);
 });
 
 // GET /api/perfumes/:id -> ficha pública + contador de vistas
-router.get("/:id", (req, res) => {
+router.get("/:id", async (req, res) => {
   const id = String(req.params.id);
-  const row = db.prepare(`SELECT * FROM perfumes WHERE id = ?`).get(id) as any;
+  const row = (await db.prepare(`SELECT * FROM perfumes WHERE id = ?`).get(id)) as any;
   if (!row || !row.visible) return res.status(404).json({ error: "Perfume no encontrado" });
-  db.prepare(`UPDATE perfumes SET views = views + 1 WHERE id = ?`).run(id);
+  await db.prepare(`UPDATE perfumes SET views = views + 1 WHERE id = ?`).run(id);
   row.views += 1;
-  res.json(rowToPerfume(row));
+  res.json(await rowToPerfume(row));
 });
 
 // POST /api/perfumes/:id/event  -> registra clic en "agregar al carrito", "comprar" o "compartir"
-router.post("/:id/event", (req, res) => {
+router.post("/:id/event", async (req, res) => {
   const { type } = req.body || {};
   const columns: Record<string, string> = {
     cart: "cart_adds",
@@ -38,7 +40,7 @@ router.post("/:id/event", (req, res) => {
   };
   const col = columns[type];
   if (!col) return res.status(400).json({ error: "Tipo de evento inválido" });
-  db.prepare(`UPDATE perfumes SET ${col} = ${col} + 1 WHERE id = ?`).run(String(req.params.id));
+  await db.prepare(`UPDATE perfumes SET ${col} = ${col} + 1 WHERE id = ?`).run(String(req.params.id));
   res.json({ ok: true });
 });
 
@@ -47,42 +49,45 @@ router.post("/:id/event", (req, res) => {
 /* ------------------------------------------------------------------ */
 
 // GET /api/perfumes/admin/all -> incluye ocultos, para el panel
-router.get("/admin/all", requireAuth, (_req, res) => {
-  const rows = db.prepare(`SELECT * FROM perfumes ORDER BY created_at DESC`).all() as any[];
-  res.json(rows.map(toAdminPerfume));
+router.get("/admin/all", requireAuth, async (_req, res) => {
+  const rows = (await db.prepare(`SELECT * FROM perfumes ORDER BY created_at DESC`).all()) as any[];
+  const perfumes: any[] = [];
+  for (const row of rows) perfumes.push(await toAdminPerfume(row));
+  res.json(perfumes);
 });
 
-function upsertImages(perfumeId: string, images: { url: string; isMain?: boolean }[] | undefined) {
+async function upsertImages(perfumeId: string, images: { url: string; isMain?: boolean }[] | undefined) {
   if (!images) return;
-  db.prepare(`DELETE FROM images WHERE perfume_id = ?`).run(perfumeId);
-  images.forEach((img, index) => {
-    db.prepare(`INSERT INTO images (id, perfume_id, url, "order", is_main) VALUES (?, ?, ?, ?, ?)`).run(
+  await db.prepare(`DELETE FROM images WHERE perfume_id = ?`).run(perfumeId);
+  for (const [index, img] of images.entries()) {
+    await db.prepare(`INSERT INTO images (id, perfume_id, url, "order", is_main) VALUES (?, ?, ?, ?, ?)`).run(
       randomUUID(),
       perfumeId,
       img.url,
       index,
       img.isMain || index === 0 ? 1 : 0
     );
-  });
+  }
 }
 
 // POST /api/perfumes/admin -> crear
-router.post("/admin", requireAuth, (req, res) => {
+router.post("/admin", requireAuth, async (req, res) => {
   const b = req.body || {};
   if (!b.id || !b.name || !b.brand) {
     return res.status(400).json({ error: "SKU, nombre y marca son obligatorios." });
   }
-  const exists = db.prepare(`SELECT id FROM perfumes WHERE id = ?`).get(b.id);
+  const exists = await db.prepare(`SELECT id FROM perfumes WHERE id = ?`).get(b.id);
   if (exists) return res.status(409).json({ error: `Ya existe un perfume con SKU "${b.id}".` });
 
-  db.prepare(
+  await db.prepare(
     `INSERT INTO perfumes (
       id, internal_code, name, brand, gender, family, type, size, description,
       price, old_price, cost, stock, min_stock,
       notes_salida, notes_corazon, notes_fondo, intensidad, duracion,
       visible, destacado, oferta, nuevo, mas_vendido, kind
     ) VALUES (?,?,?,?,?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?)
-  `).run(
+  `
+  ).run(
     b.id, b.internalCode || null, b.name, b.brand, b.gender || "Unisex", b.family || "Amaderada",
     b.type || "EDP", b.size || "100ml", b.description || "",
     Number(b.price) || 0, b.oldPrice ? Number(b.oldPrice) : null, b.cost ? Number(b.cost) : null,
@@ -93,17 +98,17 @@ router.post("/admin", requireAuth, (req, res) => {
     "bottle"
   );
 
-  upsertImages(b.id, b.images);
-  upsertVariants(b.id, b.variants);
+  await upsertImages(b.id, b.images);
+  await upsertVariants(b.id, b.variants);
 
-  const row = db.prepare(`SELECT * FROM perfumes WHERE id = ?`).get(b.id);
-  res.status(201).json(toAdminPerfume(row));
+  const row = await db.prepare(`SELECT * FROM perfumes WHERE id = ?`).get(b.id);
+  res.status(201).json(await toAdminPerfume(row));
 });
 
 // PATCH /api/perfumes/admin/:id -> editar (parcial)
-router.patch("/admin/:id", requireAuth, (req, res) => {
+router.patch("/admin/:id", requireAuth, async (req, res) => {
   const id = String(req.params.id);
-  const existing = db.prepare(`SELECT * FROM perfumes WHERE id = ?`).get(id) as any;
+  const existing = (await db.prepare(`SELECT * FROM perfumes WHERE id = ?`).get(id)) as any;
   if (!existing) return res.status(404).json({ error: "Perfume no encontrado" });
 
   const b = req.body || {};
@@ -134,7 +139,7 @@ router.patch("/admin/:id", requireAuth, (req, res) => {
     kind: "bottle",
   };
 
-  db.prepare(
+  await db.prepare(
     `UPDATE perfumes SET
       internal_code=?, name=?, brand=?, gender=?, family=?, type=?, size=?, description=?,
       price=?, old_price=?, cost=?, stock=?, min_stock=?,
@@ -150,33 +155,33 @@ router.patch("/admin/:id", requireAuth, (req, res) => {
     id
   );
 
-  if (b.images) upsertImages(id, b.images);
-  if (Array.isArray(b.variants)) upsertVariants(id, b.variants);
+  if (b.images) await upsertImages(id, b.images);
+  if (Array.isArray(b.variants)) await upsertVariants(id, b.variants);
 
-  const row = db.prepare(`SELECT * FROM perfumes WHERE id = ?`).get(id);
-  res.json(toAdminPerfume(row));
+  const row = await db.prepare(`SELECT * FROM perfumes WHERE id = ?`).get(id);
+  res.json(await toAdminPerfume(row));
 });
 
 // DELETE /api/perfumes/admin/:id
-router.delete("/admin/:id", requireAuth, (req, res) => {
-  const result = db.prepare(`DELETE FROM perfumes WHERE id = ?`).run(String(req.params.id));
+router.delete("/admin/:id", requireAuth, async (req, res) => {
+  const result = await db.prepare(`DELETE FROM perfumes WHERE id = ?`).run(String(req.params.id));
   if (result.changes === 0) return res.status(404).json({ error: "Perfume no encontrado" });
   res.json({ ok: true });
 });
 
 // POST /api/perfumes/admin/:id/duplicate
-router.post("/admin/:id/duplicate", requireAuth, (req, res) => {
-  const existing = db.prepare(`SELECT * FROM perfumes WHERE id = ?`).get(String(req.params.id)) as any;
+router.post("/admin/:id/duplicate", requireAuth, async (req, res) => {
+  const existing = (await db.prepare(`SELECT * FROM perfumes WHERE id = ?`).get(String(req.params.id))) as any;
   if (!existing) return res.status(404).json({ error: "Perfume no encontrado" });
 
   let newId = `${existing.id}-COPIA`;
   let n = 1;
-  while (db.prepare(`SELECT id FROM perfumes WHERE id = ?`).get(newId)) {
+  while (await db.prepare(`SELECT id FROM perfumes WHERE id = ?`).get(newId)) {
     n += 1;
     newId = `${existing.id}-COPIA-${n}`;
   }
 
-  db.prepare(
+  await db.prepare(
     `INSERT INTO perfumes (
       id, internal_code, name, brand, gender, family, type, size, description,
       price, old_price, cost, stock, min_stock,
@@ -191,12 +196,15 @@ router.post("/admin/:id/duplicate", requireAuth, (req, res) => {
     0, 0, existing.oferta, existing.nuevo, existing.mas_vendido, existing.kind || "bottle"
   );
 
-  const images = db.prepare(`SELECT url, is_main FROM images WHERE perfume_id = ? ORDER BY "order" ASC`).all(existing.id) as any[];
-  upsertImages(newId, images.map((i) => ({ url: i.url, isMain: !!i.is_main })));
-  upsertVariants(newId, listVariants(existing.id));
+  const images = (await db.prepare(`SELECT url, is_main FROM images WHERE perfume_id = ? ORDER BY "order" ASC`).all(existing.id)) as any[];
+  await upsertImages(newId, images.map((i) => ({ url: i.url, isMain: !!i.is_main })));
+  await upsertVariants(
+    newId,
+    (await listVariants(existing.id)).map((v) => ({ size: v.size, price: v.price, stock: v.stock }))
+  );
 
-  const row = db.prepare(`SELECT * FROM perfumes WHERE id = ?`).get(newId);
-  res.status(201).json(toAdminPerfume(row));
+  const row = await db.prepare(`SELECT * FROM perfumes WHERE id = ?`).get(newId);
+  res.status(201).json(await toAdminPerfume(row));
 });
 
 export default router;

@@ -1,10 +1,10 @@
 import { db } from "../db";
 import { listVariants } from "../db/variants";
 
-export function rowToPerfume(row: any, opts: { privateFields?: boolean } = {}) {
-  const images = db
+export async function rowToPerfume(row: any, opts: { privateFields?: boolean } = {}) {
+  const images = (await db
     .prepare(`SELECT id, url, "order", is_main as isMain FROM images WHERE perfume_id = ? ORDER BY "order" ASC`)
-    .all(row.id) as any[];
+    .all(row.id)) as any[];
 
   const tags: string[] = [];
   if (row.nuevo) tags.push("nuevo");
@@ -44,7 +44,7 @@ export function rowToPerfume(row: any, opts: { privateFields?: boolean } = {}) {
 
     images: images.map((i) => ({ id: i.id, url: i.url, isMain: !!i.isMain })),
     kind: row.kind || "bottle",
-    variants: listVariants(row.id).map((v) => ({
+    variants: (await listVariants(row.id)).map((v) => ({
       id: v.id,
       size: v.size,
       price: v.price,
