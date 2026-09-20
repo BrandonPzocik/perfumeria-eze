@@ -30,15 +30,16 @@ export default function Header({ query, onQueryChange, onSearch, onScrollToCatal
   };
 
   const submitSearch = () => {
-    setMobileSearch(false);
     setMobileNav(false);
     setTimeout(() => onSearch?.(), 60);
   };
 
+  const closeSearch = () => setMobileSearch(false);
+
   useEffect(() => {
-    document.body.style.overflow = mobileNav || mobileSearch ? "hidden" : "";
+    document.body.style.overflow = mobileNav ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [mobileNav, mobileSearch]);
+  }, [mobileNav]);
 
   const navItems = [
     { label: "Catálogo", action: () => goHomeAnd(onScrollToCatalog) },
@@ -51,7 +52,44 @@ export default function Header({ query, onQueryChange, onSearch, onScrollToCatal
   return (
     <>
       <header className="sticky top-0 z-40 bg-stone-soft/90 backdrop-blur-xl border-b border-line shadow-sm shadow-primary/5">
-        <div className="max-w-[1240px] mx-auto px-4 sm:px-6 flex items-center justify-between h-[64px] sm:h-[72px]">
+        <div className="max-w-[1240px] mx-auto px-3 sm:px-6 flex items-center justify-between h-[64px] sm:h-[72px]">
+          {mobileSearch ? (
+            <form
+              className="flex items-center gap-1.5 w-full md:hidden"
+              onSubmit={(e) => {
+                e.preventDefault();
+                submitSearch();
+              }}
+            >
+              <div className="flex-1 flex items-center gap-1.5 bg-white border border-line rounded-full px-2.5 h-9 min-w-0">
+                <Search size={15} className="text-accent flex-shrink-0" />
+                <input
+                  autoFocus
+                  type="text"
+                  inputMode="search"
+                  enterKeyHint="search"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  name="catalog-search"
+                  placeholder="Buscar…"
+                  value={query}
+                  onChange={(e) => onQueryChange(e.target.value)}
+                  className="flex-1 min-w-0 bg-transparent outline-none text-[16px] leading-none placeholder:text-ink-soft/45"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={closeSearch}
+                aria-label="Cerrar búsqueda"
+                className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full hover:bg-primary/5 text-primary"
+              >
+                <X size={20} />
+              </button>
+            </form>
+          ) : (
+          <>
           <div className="flex items-center gap-3 sm:gap-8 min-w-0">
             <button
               className="md:hidden flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg hover:bg-primary/5 text-primary transition-colors"
@@ -134,6 +172,8 @@ export default function Header({ query, onQueryChange, onSearch, onScrollToCatal
               )}
             </button>
           </div>
+          </>
+          )}
         </div>
       </header>
 
@@ -164,54 +204,6 @@ export default function Header({ query, onQueryChange, onSearch, onScrollToCatal
               </a>
             </div>
           </nav>
-        </>
-      )}
-
-      {mobileSearch && (
-        <>
-          <div
-            className="fixed inset-0 z-[55] bg-primary-deep/45 md:hidden"
-            onClick={() => setMobileSearch(false)}
-          />
-          <div className="fixed top-0 left-0 right-0 z-[56] bg-stone-soft pt-[env(safe-area-inset-top)] border-b border-line shadow-lg md:hidden">
-            <form
-              className="flex items-center gap-2 px-3 py-3"
-              onSubmit={(e) => {
-                e.preventDefault();
-                submitSearch();
-              }}
-            >
-              <div className="flex-1 flex items-center gap-2 bg-white border border-line rounded-xl px-3 py-2.5 min-w-0">
-                <Search size={18} className="text-accent flex-shrink-0" />
-                <input
-                  autoFocus
-                  type="text"
-                  inputMode="search"
-                  enterKeyHint="search"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="none"
-                  spellCheck={false}
-                  name="catalog-search"
-                  placeholder="Nombre o marca…"
-                  value={query}
-                  onChange={(e) => onQueryChange(e.target.value)}
-                  className="flex-1 min-w-0 bg-transparent outline-none text-[15px] placeholder:text-ink-soft/50"
-                />
-              </div>
-              <button type="submit" className="flex-shrink-0 bg-primary text-white rounded-xl px-3.5 py-2.5 text-[13px] font-bold uppercase tracking-wide">
-                Buscar
-              </button>
-              <button
-                type="button"
-                onClick={() => setMobileSearch(false)}
-                aria-label="Cerrar búsqueda"
-                className="flex-shrink-0 text-[13px] font-bold text-ink-soft px-1"
-              >
-                Cerrar
-              </button>
-            </form>
-          </div>
         </>
       )}
     </>
