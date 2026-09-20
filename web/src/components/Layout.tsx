@@ -88,9 +88,13 @@ export default function Layout() {
         onScrollToCatalog={handleScrollToCatalog}
         onQuickFilter={handleQuickFilter}
       />
-      <div id="app-scroll" className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain">
-        <Outlet context={{ query, quickFilter } satisfies HomeOutletContext} />
-        <Footer onScrollToCatalog={handleScrollToCatalog} onQuickFilter={handleQuickFilter} />
+      <div id="app-scroll" className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain flex flex-col">
+        <div className="flex-1">
+          <Outlet context={{ query, quickFilter } satisfies HomeOutletContext} />
+        </div>
+        {location.pathname !== "/favoritos" && (
+          <Footer onScrollToCatalog={handleScrollToCatalog} onQuickFilter={handleQuickFilter} />
+        )}
       </div>
       <CartDrawer />
       <Toast />

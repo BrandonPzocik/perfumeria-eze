@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { lockAppScroll } from "../lib/scroll";
 
@@ -53,9 +54,9 @@ export default function Drawer({
     scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, [open, resetKey]);
 
-  if (!open) return null;
+  if (!open || typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <>
       <div
         className="fixed inset-0 bg-ink/55 backdrop-blur-sm z-[60] animate-backdropIn"
@@ -93,6 +94,7 @@ export default function Drawer({
           </div>
         )}
       </div>
-    </>
+    </>,
+    document.body,
   );
 }

@@ -10,12 +10,16 @@ export default function Favorites() {
   const products = items.filter((p) => favIds.includes(p.id));
 
   return (
-    <section className="max-w-[1240px] mx-auto px-4 sm:px-6 pt-12 sm:pt-[60px] pb-16 sm:pb-[100px] min-h-[60vh]">
-      <Link to="/" className="inline-flex items-center gap-1.5 text-[13px] font-medium text-ink-soft hover:text-ink mb-6 transition-colors no-underline">
+    <section className="max-w-[1240px] mx-auto px-4 sm:px-6 pt-8 sm:pt-10 pb-16 min-h-full">
+      <Link
+        to="/"
+        className="flex items-center gap-1.5 text-[13px] font-medium text-ink-soft hover:text-ink mb-5 transition-colors no-underline w-fit"
+      >
         <ArrowLeft size={15} /> Volver al catálogo
       </Link>
-      <span className="eyebrow">Guardados en este dispositivo</span>
-      <h1 className="font-display font-bold uppercase tracking-wide text-[clamp(28px,4vw,36px)] mt-1.5 mb-8">Tus favoritos</h1>
+      <h1 className="font-display font-bold uppercase tracking-wide text-[clamp(28px,4vw,36px)] mb-8">
+        Tus favoritos
+      </h1>
 
       {products.length === 0 ? (
         <div className="text-center py-16 sm:py-[90px] text-ink-soft flex flex-col items-center gap-4">
@@ -23,9 +27,6 @@ export default function Favorites() {
             <Heart size={28} strokeWidth={1.2} />
           </div>
           <p className="font-display text-[22px] text-ink">Todavía no guardaste ningún perfume</p>
-          <span className="text-[13.5px] max-w-[360px]">
-            Tocá el corazón en cualquier perfume del catálogo para guardarlo acá. Se guarda en este dispositivo, sin necesidad de crear una cuenta.
-          </span>
           <Link to="/" className="btn-secondary mt-2 no-underline">
             Explorar catálogo
           </Link>

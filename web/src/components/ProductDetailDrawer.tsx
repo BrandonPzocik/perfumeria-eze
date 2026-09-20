@@ -44,7 +44,14 @@ export default function ProductDetailDrawer({ product }: { product: Perfume }) {
   const bottleStock = product.stock;
   const mainImage = assetUrl(perfumeImageUrl(sheet, items));
 
-  const close = () => navigate(-1);
+  const close = () => {
+    const idx = (window.history.state as { idx?: number } | null)?.idx;
+    if (typeof idx === "number" && idx > 0) {
+      navigate(-1);
+      return;
+    }
+    navigate("/", { replace: true });
+  };
 
   const handleAddBottle = () => {
     addItem(product);
