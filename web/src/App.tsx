@@ -12,6 +12,7 @@ import AdminPerfumes from "./admin/pages/AdminPerfumes";
 import AdminPerfumeForm from "./admin/pages/AdminPerfumeForm";
 import AdminImport from "./admin/pages/AdminImport";
 import AdminSettings from "./admin/pages/AdminSettings";
+import AdminOrdenar from "./admin/pages/AdminOrdenar";
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
           <Route element={<AdminLayout />}>
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/perfumes" element={<AdminPerfumes />} />
+            <Route path="/admin/ordenar" element={<AdminOrdenar />} />
             <Route path="/admin/perfumes/nuevo" element={<AdminPerfumeForm />} />
             <Route path="/admin/perfumes/:id" element={<AdminPerfumeForm />} />
             <Route path="/admin/importar" element={<AdminImport />} />

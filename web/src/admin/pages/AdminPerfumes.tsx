@@ -1,13 +1,13 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Search, Copy, Pencil, Trash2, Eye, EyeOff, Star, Download, ChevronUp, ChevronDown, ChevronsUp, ChevronsDown } from "lucide-react";
+import { Plus, Search, Copy, Pencil, Trash2, Eye, EyeOff, Star, Download } from "lucide-react";
 import { useAdminPerfumesStore } from "../hooks/useAdminPerfumesStore";
 import { formatCurrency } from "../../lib/format";
 import { API_BASE, getToken } from "../../lib/api";
 import { hasDecants } from "../../lib/product";
 
 export default function AdminPerfumes() {
-  const { items, loading, error, fetchAll, remove, duplicate, toggle, reorder } = useAdminPerfumesStore();
+  const { items, loading, error, fetchAll, remove, duplicate, toggle } = useAdminPerfumesStore();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -40,23 +40,6 @@ export default function AdminPerfumes() {
     setConfirmDelete(null);
   };
 
-  const canReorder = !query;
-  const move = (id: string, dir: "up" | "down" | "top" | "bottom") => {
-    if (!canReorder) return;
-    const list = [...items];
-    const from = list.findIndex((p) => p.id === id);
-    if (from < 0) return;
-    let to = from;
-    if (dir === "up") to = from - 1;
-    if (dir === "down") to = from + 1;
-    if (dir === "top") to = 0;
-    if (dir === "bottom") to = list.length - 1;
-    if (to < 0 || to >= list.length || to === from) return;
-    const [row] = list.splice(from, 1);
-    list.splice(to, 0, row);
-    void reorder(list.map((p) => p.id));
-  };
-
   const exportUrl = `${API_BASE}/import/export`;
 
   return (
@@ -65,8 +48,8 @@ export default function AdminPerfumes() {
         <div>
           <h1 className="font-display text-[28px] mb-1">Perfumes</h1>
           <p className="text-[13.5px] text-ink-soft">{items.length} perfumes en el catálogo.</p>
-          <p className="text-[12.5px] text-ink-soft/80 mt-1 max-w-[520px]">
-            El orden de esta lista es el del catálogo público. Usá las flechas para subir o bajar. Los nuevos quedan al final.
+          <p className="text-[12.5px] text-ink-soft/80 mt-1">
+            Para cambiar el orden del catálogo, usá la pestaña <Link to="/admin/ordenar" className="underline font-semibold text-ink">Ordenar</Link>.
           </p>
         </div>
         <div className="flex gap-2.5">
@@ -111,7 +94,6 @@ export default function AdminPerfumes() {
         <table className="w-full text-[13px] min-w-[900px]">
           <thead>
             <tr className="border-b border-line bg-[#F7F4EE] text-left text-[11px] uppercase tracking-wider text-ink-soft/70">
-              <th className="px-3 py-3 font-semibold w-[88px]">Orden</th>
               <th className="px-4 py-3 font-semibold">Perfume</th>
               <th className="px-4 py-3 font-semibold">SKU</th>
               <th className="px-4 py-3 font-semibold">Precio</th>
@@ -122,56 +104,16 @@ export default function AdminPerfumes() {
           </thead>
           <tbody>
             {loading && items.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-10 text-center text-ink-soft">Cargando…</td></tr>
+              <tr><td colSpan={6} className="px-4 py-10 text-center text-ink-soft">Cargando…</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-10 text-center text-ink-soft">No hay perfumes que coincidan.</td></tr>
+              <tr><td colSpan={6} className="px-4 py-10 text-center text-ink-soft">No hay perfumes que coincidan.</td></tr>
             ) : (
-              filtered.map((p, index) => (
+              filtered.map((p) => (
                 <tr
                   key={p.id}
                   className="border-b border-line-soft hover:bg-[#FAF8F3] cursor-pointer"
                   onClick={() => navigate(`/admin/perfumes/${p.id}`)}
                 >
-                  <td className="px-2 py-3" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-0.5">
-                      <button
-                        type="button"
-                        title="Llevar al inicio"
-                        disabled={!canReorder || index === 0}
-                        onClick={() => move(p.id, "top")}
-                        className="p-1 rounded hover:bg-line-soft text-ink-soft disabled:opacity-30 disabled:hover:bg-transparent"
-                      >
-                        <ChevronsUp size={15} />
-                      </button>
-                      <button
-                        type="button"
-                        title="Subir"
-                        disabled={!canReorder || index === 0}
-                        onClick={() => move(p.id, "up")}
-                        className="p-1 rounded hover:bg-line-soft text-ink-soft disabled:opacity-30 disabled:hover:bg-transparent"
-                      >
-                        <ChevronUp size={15} />
-                      </button>
-                      <button
-                        type="button"
-                        title="Bajar"
-                        disabled={!canReorder || index === filtered.length - 1}
-                        onClick={() => move(p.id, "down")}
-                        className="p-1 rounded hover:bg-line-soft text-ink-soft disabled:opacity-30 disabled:hover:bg-transparent"
-                      >
-                        <ChevronDown size={15} />
-                      </button>
-                      <button
-                        type="button"
-                        title="Llevar al final"
-                        disabled={!canReorder || index === filtered.length - 1}
-                        onClick={() => move(p.id, "bottom")}
-                        className="p-1 rounded hover:bg-line-soft text-ink-soft disabled:opacity-30 disabled:hover:bg-transparent"
-                      >
-                        <ChevronsDown size={15} />
-                      </button>
-                    </div>
-                  </td>
                   <td className="px-4 py-3">
                     <div className="font-semibold">{p.name}</div>
                     <div className="text-ink-soft/60 text-[11.5px]">{p.brand} · {p.family}</div>

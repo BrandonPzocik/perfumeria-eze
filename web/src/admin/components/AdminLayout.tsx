@@ -1,13 +1,14 @@
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Sparkles, FileSpreadsheet, Settings, LogOut, ExternalLink, Menu } from "lucide-react";
+import { LayoutDashboard, Sparkles, ArrowUpDown, FileSpreadsheet, Settings, LogOut, ExternalLink, Menu } from "lucide-react";
 import StoreLogo from "../../components/StoreLogo";
 import { useAdminAuthStore } from "../hooks/useAdminAuthStore";
 import { useSettingsStore } from "../../hooks/useSettingsStore";
 
 const NAV = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/admin/perfumes", label: "Perfumes", icon: Sparkles },
+  { to: "/admin/perfumes", label: "Perfumes", icon: Sparkles, end: true },
+  { to: "/admin/ordenar", label: "Ordenar", icon: ArrowUpDown },
   { to: "/admin/importar", label: "Importar Excel", icon: FileSpreadsheet },
   { to: "/admin/configuracion", label: "Configuración", icon: Settings },
 ];
