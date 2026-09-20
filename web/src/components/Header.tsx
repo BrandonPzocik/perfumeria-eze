@@ -9,11 +9,12 @@ import { useSettingsStore } from "../hooks/useSettingsStore";
 interface HeaderProps {
   query: string;
   onQueryChange: (q: string) => void;
+  onSearch?: () => void;
   onScrollToCatalog?: () => void;
   onQuickFilter?: (tag: "nuevo" | "oferta") => void;
 }
 
-export default function Header({ query, onQueryChange, onScrollToCatalog, onQuickFilter }: HeaderProps) {
+export default function Header({ query, onQueryChange, onSearch, onScrollToCatalog, onQuickFilter }: HeaderProps) {
   const [mobileNav, setMobileNav] = useState(false);
   const [mobileSearch, setMobileSearch] = useState(false);
   const cartCount = useCartStore((s) => s.lines.reduce((sum, l) => sum + l.qty, 0));
@@ -26,6 +27,12 @@ export default function Header({ query, onQueryChange, onScrollToCatalog, onQuic
     setMobileNav(false);
     navigate("/");
     setTimeout(() => action?.(), 0);
+  };
+
+  const submitSearch = () => {
+    setMobileSearch(false);
+    setMobileNav(false);
+    setTimeout(() => onSearch?.(), 60);
   };
 
   useEffect(() => {
@@ -92,9 +99,17 @@ export default function Header({ query, onQueryChange, onScrollToCatalog, onQuic
             <div className="hidden md:flex items-center rounded-full bg-white border border-line px-3.5 py-2 focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10 transition-all shadow-sm">
               <Search size={15} className="text-accent flex-shrink-0" />
               <input
+                type="search"
+                enterKeyHint="search"
                 placeholder="Buscar perfumes…"
                 value={query}
                 onChange={(e) => onQueryChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    submitSearch();
+                  }
+                }}
                 className="bg-transparent outline-none ml-2 w-[180px] lg:w-[220px] text-[13px] placeholder:text-ink-soft/45"
               />
             </div>
@@ -156,17 +171,28 @@ export default function Header({ query, onQueryChange, onScrollToCatalog, onQuic
             <Search size={18} className="text-accent flex-shrink-0" />
             <input
               autoFocus
+              type="search"
+              enterKeyHint="search"
               placeholder="Buscar por nombre, marca, notas…"
               value={query}
               onChange={(e) => onQueryChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  submitSearch();
+                }
+              }}
               className="flex-1 bg-transparent outline-none text-[15px] placeholder:text-ink-soft/50"
             />
-            <button onClick={() => setMobileSearch(false)} aria-label="Cerrar búsqueda" className="text-[13px] font-bold text-primary px-2">
+            <button onClick={() => setMobileSearch(false)} aria-label="Cerrar búsqueda" className="text-[13px] font-bold text-ink-soft px-2">
               Cerrar
             </button>
           </div>
           <div className="flex-1 p-4">
-            <p className="text-[13px] text-ink-soft">Escribí para buscar en el catálogo completo.</p>
+            <p className="text-[13px] text-ink-soft mb-4">Escribí el nombre o la marca y tocá Buscar para ver los resultados.</p>
+            <button type="button" onClick={submitSearch} className="btn-primary w-full">
+              Buscar
+            </button>
           </div>
         </div>
       )}

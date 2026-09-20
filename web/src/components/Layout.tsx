@@ -34,6 +34,18 @@ export default function Layout() {
     fetchPerfumes();
   }, [fetchSettings, fetchPerfumes]);
 
+  const scrollToResults = () => {
+    const targetId = location.pathname.startsWith("/decants") ? "decants" : "catalogo";
+    const run = () =>
+      document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (location.pathname.startsWith("/decants") || location.pathname === "/" || location.pathname.startsWith("/producto/")) {
+      requestAnimationFrame(run);
+      return;
+    }
+    navigate("/");
+    setTimeout(run, 80);
+  };
+
   const handleQueryChange = (q: string) => {
     setQuery(q);
     if (location.pathname.startsWith("/decants")) return;
@@ -43,6 +55,12 @@ export default function Layout() {
   const scrollToCatalog = () => {
     document.getElementById("catalogo")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  useEffect(() => {
+    if (!query.trim()) return;
+    const t = window.setTimeout(scrollToResults, 350);
+    return () => window.clearTimeout(t);
+  }, [query]);
 
   const handleScrollToCatalog = () => {
     if (location.pathname !== "/") {
@@ -63,6 +81,7 @@ export default function Layout() {
       <Header
         query={query}
         onQueryChange={handleQueryChange}
+        onSearch={scrollToResults}
         onScrollToCatalog={handleScrollToCatalog}
         onQuickFilter={handleQuickFilter}
       />
