@@ -243,17 +243,18 @@ router.post("/commit", requireAuth, async (req, res) => {
         );
         updated++;
       } else {
+        const maxOrder = Number(((await db.prepare(`SELECT COALESCE(MAX(sort_order), -1) as m FROM perfumes`).get()) as any)?.m ?? -1);
         await db.prepare(
           `INSERT INTO perfumes (id, internal_code, name, brand, gender, family, type, size, description,
             price, old_price, cost, stock, min_stock, notes_salida, notes_corazon, notes_fondo,
-            intensidad, duracion, visible, destacado, oferta, nuevo, mas_vendido, kind)
-          VALUES (?,?,?,?,?,?,?,?,?, ?,?,?,?,?, ?,?,?, ?,?,?,?,?,?,?,?)`
+            intensidad, duracion, visible, destacado, oferta, nuevo, mas_vendido, kind, sort_order)
+          VALUES (?,?,?,?,?,?,?,?,?, ?,?,?,?,?, ?,?,?, ?,?,?,?,?,?,?,?,?)`
         ).run(
           id, fields.internal_code, fields.name, fields.brand, fields.gender, fields.family, fields.type, fields.size, fields.description,
           fields.price, fields.old_price, fields.cost, fields.stock, fields.min_stock,
           fields.notes_salida, fields.notes_corazon, fields.notes_fondo,
           fields.intensidad, fields.duracion, fields.visible, fields.destacado, fields.oferta, fields.nuevo, fields.mas_vendido,
-          fields.kind
+          fields.kind, maxOrder + 1
         );
         created++;
       }

@@ -12,6 +12,7 @@ interface AdminPerfumesState {
   remove: (id: string) => Promise<void>;
   duplicate: (id: string) => Promise<Perfume>;
   toggle: (id: string, field: "visible" | "destacado" | "oferta" | "nuevo" | "masVendido", value: boolean) => Promise<void>;
+  reorder: (ids: string[]) => Promise<void>;
 }
 
 export const useAdminPerfumesStore = create<AdminPerfumesState>((set, get) => ({
@@ -31,7 +32,7 @@ export const useAdminPerfumesStore = create<AdminPerfumesState>((set, get) => ({
 
   create: async (data) => {
     const created = await api.post<Perfume>("/perfumes/admin", data, true);
-    set({ items: [created, ...get().items] });
+    set({ items: [...get().items, created] });
     return created;
   },
 
@@ -48,12 +49,23 @@ export const useAdminPerfumesStore = create<AdminPerfumesState>((set, get) => ({
 
   duplicate: async (id) => {
     const copy = await api.post<Perfume>(`/perfumes/admin/${id}/duplicate`, undefined, true);
-    set({ items: [copy, ...get().items] });
+    set({ items: [...get().items, copy] });
     return copy;
   },
 
   toggle: async (id, field, value) => {
     const updated = await api.patch<Perfume>(`/perfumes/admin/${id}`, { [field]: value }, true);
     set({ items: get().items.map((p) => (p.id === id ? updated : p)) });
+  },
+
+  reorder: async (ids) => {
+    const previous = get().items;
+    const byId = new Map(previous.map((p) => [p.id, p]));
+    set({ items: ids.map((id) => byId.get(id)).filter(Boolean) as Perfume[], error: null });
+    try {
+      await api.post("/perfumes/admin/reorder", { ids }, true);
+    } catch (err: any) {
+      set({ items: previous, error: err.message || "No se pudo guardar el orden." });
+    }
   },
 }));

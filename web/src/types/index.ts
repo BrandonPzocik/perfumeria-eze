@@ -64,6 +64,7 @@ export interface Perfume {
   oferta: boolean;
   nuevo: boolean;
   masVendido: boolean;
+  sortOrder?: number;
   tags: Tag[];
 
   images: PerfumeImage[];

@@ -44,6 +44,7 @@ export async function rowToPerfume(row: any, opts: { privateFields?: boolean } =
 
     images: images.map((i) => ({ id: i.id, url: i.url, isMain: !!i.isMain })),
     kind: row.kind || "bottle",
+    sortOrder: Number(row.sort_order) || 0,
     variants: (await listVariants(row.id)).map((v) => ({
       id: v.id,
       size: v.size,

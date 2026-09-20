@@ -40,6 +40,7 @@ const SCHEMA = `
       oferta INTEGER NOT NULL DEFAULT 0,
       nuevo INTEGER NOT NULL DEFAULT 0,
       mas_vendido INTEGER NOT NULL DEFAULT 0,
+      sort_order INTEGER NOT NULL DEFAULT 0,
 
       views INTEGER NOT NULL DEFAULT 0,
       cart_adds INTEGER NOT NULL DEFAULT 0,
@@ -130,6 +131,13 @@ export async function migrate() {
   const perfumeColNames = new Set(perfumeCols.map((c) => c.name));
   if (!perfumeColNames.has("kind")) {
     await db.exec(`ALTER TABLE perfumes ADD COLUMN kind TEXT NOT NULL DEFAULT 'bottle'`);
+  }
+  if (!perfumeColNames.has("sort_order")) {
+    await db.exec(`ALTER TABLE perfumes ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0`);
+    const ordered = (await db.prepare(`SELECT id FROM perfumes ORDER BY created_at DESC`).all()) as { id: string }[];
+    for (let i = 0; i < ordered.length; i++) {
+      await db.prepare(`UPDATE perfumes SET sort_order = ? WHERE id = ?`).run(i, ordered[i].id);
+    }
   }
 
   const colors = (await db.prepare(`SELECT primary_color FROM settings WHERE id = 1`).get()) as { primary_color?: string } | undefined;
