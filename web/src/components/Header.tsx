@@ -99,8 +99,10 @@ export default function Header({ query, onQueryChange, onSearch, onScrollToCatal
             <div className="hidden md:flex items-center rounded-full bg-white border border-line px-3.5 py-2 focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10 transition-all shadow-sm">
               <Search size={15} className="text-accent flex-shrink-0" />
               <input
-                type="search"
+                type="text"
+                inputMode="search"
                 enterKeyHint="search"
+                autoComplete="off"
                 placeholder="Buscar perfumes…"
                 value={query}
                 onChange={(e) => onQueryChange(e.target.value)}
@@ -166,35 +168,51 @@ export default function Header({ query, onQueryChange, onSearch, onScrollToCatal
       )}
 
       {mobileSearch && (
-        <div className="fixed inset-0 z-[55] bg-stone-soft flex flex-col md:hidden animate-fadeIn">
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-line bg-white">
-            <Search size={18} className="text-accent flex-shrink-0" />
-            <input
-              autoFocus
-              type="search"
-              enterKeyHint="search"
-              placeholder="Buscar por nombre, marca, notas…"
-              value={query}
-              onChange={(e) => onQueryChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  submitSearch();
-                }
+        <>
+          <div
+            className="fixed inset-0 z-[55] bg-primary-deep/45 md:hidden"
+            onClick={() => setMobileSearch(false)}
+          />
+          <div className="fixed top-0 left-0 right-0 z-[56] bg-stone-soft pt-[env(safe-area-inset-top)] border-b border-line shadow-lg md:hidden">
+            <form
+              className="flex items-center gap-2 px-3 py-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                submitSearch();
               }}
-              className="flex-1 bg-transparent outline-none text-[15px] placeholder:text-ink-soft/50"
-            />
-            <button onClick={() => setMobileSearch(false)} aria-label="Cerrar búsqueda" className="text-[13px] font-bold text-ink-soft px-2">
-              Cerrar
-            </button>
+            >
+              <div className="flex-1 flex items-center gap-2 bg-white border border-line rounded-xl px-3 py-2.5 min-w-0">
+                <Search size={18} className="text-accent flex-shrink-0" />
+                <input
+                  autoFocus
+                  type="text"
+                  inputMode="search"
+                  enterKeyHint="search"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  name="catalog-search"
+                  placeholder="Nombre o marca…"
+                  value={query}
+                  onChange={(e) => onQueryChange(e.target.value)}
+                  className="flex-1 min-w-0 bg-transparent outline-none text-[15px] placeholder:text-ink-soft/50"
+                />
+              </div>
+              <button type="submit" className="flex-shrink-0 bg-primary text-white rounded-xl px-3.5 py-2.5 text-[13px] font-bold uppercase tracking-wide">
+                Buscar
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileSearch(false)}
+                aria-label="Cerrar búsqueda"
+                className="flex-shrink-0 text-[13px] font-bold text-ink-soft px-1"
+              >
+                Cerrar
+              </button>
+            </form>
           </div>
-          <div className="flex-1 p-4">
-            <p className="text-[13px] text-ink-soft mb-4">Escribí el nombre o la marca y tocá Buscar para ver los resultados.</p>
-            <button type="button" onClick={submitSearch} className="btn-primary w-full">
-              Buscar
-            </button>
-          </div>
-        </div>
+        </>
       )}
     </>
   );

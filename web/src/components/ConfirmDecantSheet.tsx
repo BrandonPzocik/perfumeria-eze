@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { formatCurrency } from "../lib/format";
 import type { PerfumeVariant } from "../types";
 
@@ -16,10 +17,17 @@ export default function ConfirmDecantSheet({
   onCancel,
   onConfirm,
 }: ConfirmDecantSheetProps) {
-  return (
-    <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-ink/50" onClick={onCancel} aria-hidden />
-      <div className="relative w-full sm:max-w-[380px] bg-stone-soft rounded-t-2xl sm:rounded-2xl px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-drawer animate-slideInRight sm:animate-fadeIn">
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="absolute inset-0 bg-ink/55" onClick={onCancel} aria-hidden />
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="relative w-full sm:max-w-[400px] bg-stone-soft rounded-t-2xl sm:rounded-2xl px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-drawer animate-slideInUp sm:animate-fadeIn"
+        onClick={(e) => e.stopPropagation()}
+      >
         <p className="eyebrow mb-2">Agregar al carrito</p>
         <p className="font-display font-bold uppercase tracking-wide text-[22px] leading-tight">
           {productName}
@@ -44,6 +52,7 @@ export default function ConfirmDecantSheet({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
