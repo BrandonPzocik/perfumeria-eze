@@ -113,7 +113,7 @@ export default function Filters({
   return (
     <>
       {/* Desktop horizontal filters */}
-      <div className="hidden md:block sticky top-[72px] z-20 bg-stone/95 backdrop-blur-sm pb-4 mb-3 -mx-1 px-1">
+      <div className="hidden md:block pb-4 mb-3 -mx-1 px-1">
         <div className="flex gap-2 overflow-x-auto no-scrollbar pt-1.5 items-center">
           <span className="text-[11px] flex items-center gap-1.5 text-ink-soft pr-1 flex-shrink-0">
             <SlidersHorizontal size={13} /> Filtrar
@@ -153,7 +153,7 @@ export default function Filters({
       </div>
 
       {/* Mobile filter button */}
-      <div className="md:hidden sticky top-[64px] z-20 bg-stone/95 backdrop-blur-sm py-3 mb-2 flex items-center gap-2">
+      <div className="md:hidden py-3 mb-2 flex items-center gap-2">
         <button
           onClick={() => setMobileOpen(true)}
           className="flex items-center gap-2 text-xs font-semibold px-4 py-2.5 rounded-pill border border-line bg-stone-soft"
