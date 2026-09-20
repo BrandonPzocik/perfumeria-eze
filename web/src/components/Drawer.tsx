@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
+import { lockAppScroll } from "../lib/scroll";
 
 interface DrawerProps {
   open: boolean;
@@ -8,6 +9,7 @@ interface DrawerProps {
   headerRight?: ReactNode;
   footer?: ReactNode;
   width?: "sm" | "md" | "lg";
+  resetKey?: string | number;
   children: ReactNode;
 }
 
@@ -24,15 +26,16 @@ export default function Drawer({
   headerRight,
   footer,
   width = "sm",
+  resetKey,
   children,
 }: DrawerProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
 
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const unlock = lockAppScroll();
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -40,10 +43,15 @@ export default function Drawer({
     window.addEventListener("keydown", onKey);
 
     return () => {
-      document.body.style.overflow = prev;
+      unlock();
       window.removeEventListener("keydown", onKey);
     };
   }, [open, onClose]);
+
+  useEffect(() => {
+    if (!open) return;
+    scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [open, resetKey]);
 
   if (!open) return null;
 
@@ -77,7 +85,7 @@ export default function Drawer({
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto overscroll-contain">{children}</div>
+        <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain">{children}</div>
 
         {footer && (
           <div className="flex-shrink-0 border-t border-line bg-stone-soft/95 backdrop-blur-sm safe-area-bottom">

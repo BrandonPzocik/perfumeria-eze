@@ -54,7 +54,7 @@ export default function CatalogSection({ query, quickFilter }: CatalogSectionPro
   }, [catalogItems, query, activeFamily, activeGender, activeBrand, activeTag]);
 
   return (
-    <section id="catalogo" className="max-w-[1240px] mx-auto px-4 sm:px-6 pt-12 sm:pt-[70px] pb-8 sm:pb-12 scroll-mt-[64px] sm:scroll-mt-[72px]">
+    <section id="catalogo" className="max-w-[1240px] mx-auto px-4 sm:px-6 pt-12 sm:pt-[70px] pb-8 sm:pb-12">
       <div className="mb-6 sm:mb-8">
         <span className="eyebrow">Todo el catálogo</span>
         <h2 className="font-display font-bold uppercase tracking-wide text-[clamp(28px,4vw,36px)] mt-1.5">Perfumes</h2>

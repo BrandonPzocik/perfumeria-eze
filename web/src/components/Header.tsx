@@ -5,6 +5,7 @@ import StoreLogo from "./StoreLogo";
 import { useCartStore } from "../hooks/useCartStore";
 import { useFavoritesStore } from "../hooks/useFavoritesStore";
 import { useSettingsStore } from "../hooks/useSettingsStore";
+import { lockAppScroll } from "../lib/scroll";
 
 interface HeaderProps {
   query: string;
@@ -37,8 +38,8 @@ export default function Header({ query, onQueryChange, onSearch, onScrollToCatal
   const closeSearch = () => setMobileSearch(false);
 
   useEffect(() => {
-    document.body.style.overflow = mobileNav ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    if (!mobileNav) return;
+    return lockAppScroll();
   }, [mobileNav]);
 
   const navItems = [
@@ -51,7 +52,7 @@ export default function Header({ query, onQueryChange, onSearch, onScrollToCatal
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-stone-soft/90 backdrop-blur-xl border-b border-line shadow-sm shadow-primary/5">
+      <header className="flex-shrink-0 z-40 bg-stone-soft/90 backdrop-blur-xl border-b border-line shadow-sm shadow-primary/5">
         <div className="max-w-[1240px] mx-auto px-3 sm:px-6 flex items-center justify-between h-[64px] sm:h-[72px]">
           {mobileSearch ? (
             <form

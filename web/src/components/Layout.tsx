@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
@@ -8,6 +8,7 @@ import WhatsAppFAB from "./WhatsAppFAB";
 import { useSettingsStore } from "../hooks/useSettingsStore";
 import { usePerfumesStore } from "../hooks/usePerfumesStore";
 import { useThemeColors } from "../hooks/useThemeColors";
+import { scrollAppToId } from "../lib/scroll";
 
 export interface QuickFilter {
   tag: "nuevo" | "oferta";
@@ -34,17 +35,21 @@ export default function Layout() {
     fetchPerfumes();
   }, [fetchSettings, fetchPerfumes]);
 
-  const scrollToResults = () => {
+  const onResultsPage =
+    location.pathname === "/" ||
+    location.pathname.startsWith("/producto/") ||
+    location.pathname.startsWith("/decants");
+
+  const scrollToResults = useCallback(() => {
     const targetId = location.pathname.startsWith("/decants") ? "decants" : "catalogo";
-    const run = () =>
-      document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
-    if (location.pathname.startsWith("/decants") || location.pathname === "/" || location.pathname.startsWith("/producto/")) {
+    const run = () => scrollAppToId(targetId);
+    if (onResultsPage) {
       requestAnimationFrame(run);
       return;
     }
     navigate("/");
-    setTimeout(run, 80);
-  };
+    setTimeout(run, 120);
+  }, [location.pathname, navigate, onResultsPage]);
 
   const handleQueryChange = (q: string) => {
     setQuery(q);
@@ -52,20 +57,18 @@ export default function Layout() {
     if (location.pathname !== "/") navigate("/");
   };
 
-  const scrollToCatalog = () => {
-    document.getElementById("catalogo")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  const scrollToCatalog = () => scrollAppToId("catalogo");
 
   useEffect(() => {
     if (!query.trim()) return;
     const t = window.setTimeout(scrollToResults, 350);
     return () => window.clearTimeout(t);
-  }, [query]);
+  }, [query, scrollToResults]);
 
   const handleScrollToCatalog = () => {
     if (location.pathname !== "/") {
       navigate("/");
-      setTimeout(scrollToCatalog, 60);
+      setTimeout(scrollToCatalog, 120);
     } else {
       scrollToCatalog();
     }
@@ -77,7 +80,7 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen bg-stone text-ink">
+    <div className="h-full bg-stone text-ink flex flex-col overflow-hidden">
       <Header
         query={query}
         onQueryChange={handleQueryChange}
@@ -85,8 +88,10 @@ export default function Layout() {
         onScrollToCatalog={handleScrollToCatalog}
         onQuickFilter={handleQuickFilter}
       />
-      <Outlet context={{ query, quickFilter } satisfies HomeOutletContext} />
-      <Footer onScrollToCatalog={handleScrollToCatalog} onQuickFilter={handleQuickFilter} />
+      <div id="app-scroll" className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain">
+        <Outlet context={{ query, quickFilter } satisfies HomeOutletContext} />
+        <Footer onScrollToCatalog={handleScrollToCatalog} onQuickFilter={handleQuickFilter} />
+      </div>
       <CartDrawer />
       <Toast />
       <WhatsAppFAB />

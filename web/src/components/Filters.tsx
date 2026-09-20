@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
 import { FAMILIES } from "../data/constants";
 import type { Gender, Tag } from "../types";
+import { lockAppScroll } from "../lib/scroll";
 
 interface FiltersProps {
   activeFamily: string;
@@ -58,9 +59,7 @@ export default function Filters({
 
   useEffect(() => {
     if (!mobileOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
+    return lockAppScroll();
   }, [mobileOpen]);
 
   const activeCount = [

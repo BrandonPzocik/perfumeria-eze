@@ -38,6 +38,7 @@ export default function ProductDetailDrawer({ product }: { product: Perfume }) {
 
   useEffect(() => {
     registerViewed(sheet.id);
+    setPendingDecant(null);
   }, [sheet.id, registerViewed]);
 
   const bottleStock = product.stock;
@@ -100,6 +101,7 @@ export default function ProductDetailDrawer({ product }: { product: Perfume }) {
       onClose={close}
       title="Ficha del perfume"
       width="md"
+      resetKey={product.id}
       headerRight={
         <button
           onClick={handleShare}

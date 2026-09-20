@@ -6,6 +6,7 @@ import CatalogSection from "../components/CatalogSection";
 import ProductDetailDrawer from "../components/ProductDetailDrawer";
 import { usePerfumesStore } from "../hooks/usePerfumesStore";
 import type { HomeOutletContext } from "../components/Layout";
+import { scrollAppToId } from "../lib/scroll";
 
 export default function Home() {
   const { query, quickFilter } = useOutletContext<HomeOutletContext>();
@@ -13,9 +14,7 @@ export default function Home() {
   const items = usePerfumesStore((s) => s.items);
   const product = id ? items.find((p) => p.id === id) : undefined;
 
-  const scrollToCatalog = () => {
-    document.getElementById("catalogo")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  const scrollToCatalog = () => scrollAppToId("catalogo");
 
   return (
     <>

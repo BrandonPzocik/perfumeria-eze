@@ -39,7 +39,7 @@ export default function Decants() {
   }, [decants, query, activeFamily, activeGender, activeBrand, activeTag]);
 
   return (
-    <section id="decants" className="max-w-[1240px] mx-auto px-4 sm:px-6 pt-12 sm:pt-[70px] pb-16 sm:pb-[100px] min-h-[60vh] scroll-mt-[64px] sm:scroll-mt-[72px]">
+    <section id="decants" className="max-w-[1240px] mx-auto px-4 sm:px-6 pt-12 sm:pt-[70px] pb-16 sm:pb-[100px] min-h-[60vh]">
       <div className="mb-6 sm:mb-8">
         <span className="eyebrow">Fragancias en formato chico</span>
         <h1 className="font-display font-bold uppercase tracking-wide text-[clamp(28px,4vw,36px)] mt-1.5">Decants</h1>
