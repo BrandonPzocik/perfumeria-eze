@@ -89,7 +89,7 @@ export default function Layout() {
         onQuickFilter={handleQuickFilter}
       />
       <div id="app-scroll" className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain flex flex-col">
-        <div className="flex-1">
+        <div className="flex-1 min-h-min">
           <Outlet context={{ query, quickFilter } satisfies HomeOutletContext} />
         </div>
         {location.pathname !== "/favoritos" && (

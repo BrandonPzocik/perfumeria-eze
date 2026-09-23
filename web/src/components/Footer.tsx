@@ -37,7 +37,7 @@ export default function Footer({ onScrollToCatalog, onQuickFilter }: FooterProps
   };
 
   return (
-    <footer className="relative text-white px-4 sm:px-6 pt-14 sm:pt-20 pb-8 overflow-hidden">
+    <footer className="relative shrink-0 text-white px-4 sm:px-6 pt-14 sm:pt-20 pb-[max(2.5rem,calc(env(safe-area-inset-bottom)+1.5rem))] overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-[#1C1814] via-[#2A241E] to-[#3D3229]" />
 
       <div className="relative max-w-[1240px] mx-auto">
